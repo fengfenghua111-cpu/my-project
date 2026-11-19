@@ -58,6 +58,7 @@
             border: none;
             border-radius: 12px;
             cursor: pointer;
+            touch-action: manipulation;
             transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
         }
 
@@ -164,11 +165,13 @@
             background: #f5f5f5;
             padding: 0.4rem;
             border-radius: 14px;
+            position: relative;
+            z-index: 5;
         }
 
         .auth-tab {
             flex: 1;
-            padding: 0.8rem;
+            padding: 0.85rem;
             font-size: 1.25rem;
             font-weight: bold;
             border: none;
@@ -176,6 +179,7 @@
             background: transparent;
             color: var(--text-light);
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.2s;
         }
 
@@ -189,6 +193,7 @@
             position: relative;
             display: flex;
             align-items: center;
+            width: 100%;
         }
 
         .password-wrapper .form-control {
@@ -206,6 +211,32 @@
             font-weight: bold;
             color: var(--text-dark);
             cursor: pointer;
+            z-index: 2;
+        }
+
+        /* 即時輸入驗證提示文字 */
+        .input-hint {
+            font-size: 1.05rem;
+            font-weight: bold;
+            margin-top: 0.4rem;
+            line-height: 1.4;
+        }
+
+        .input-hint.error {
+            color: #c62828;
+        }
+
+        .input-hint.success {
+            color: #2e7d32;
+        }
+
+        .form-control.input-error {
+            border-color: #c62828;
+            background-color: #fff8f8;
+        }
+
+        .form-control.input-success {
+            border-color: #2e7d32;
         }
 
         /* 頂部會員狀態與儲值錢包欄 */
@@ -1238,57 +1269,60 @@
             </div>
 
             <div class="auth-tabs">
-                <button type="button" class="auth-tab active" data-auth-mode="login">🔑 賬號登入</button>
-                <button type="button" class="auth-tab" data-auth-mode="register">📝 註冊新賬號</button>
+                <button type="button" id="tab-btn-login" class="auth-tab active" data-auth-mode="login">🔑 賬號登入</button>
+                <button type="button" id="tab-btn-register" class="auth-tab" data-auth-mode="register">📝 註冊新賬號</button>
             </div>
 
             <!-- 登入表單 -->
             <form id="login-form">
                 <div class="form-group">
-                    <label for="login-account">👤 會員賬號（或手機號碼）</label>
-                    <input type="text" id="login-account" class="form-control" placeholder="請輸入賬號" autocomplete="username">
+                    <label for="login-account">👤 會員賬號（8 位數）</label>
+                    <input type="text" id="login-account" class="form-control" placeholder="請輸入 8 位數賬號" autocomplete="username">
                 </div>
 
                 <div class="form-group">
-                    <label for="login-password">🔒 登入密碼</label>
+                    <label for="login-password">🔒 登入密碼（8 位數）</label>
                     <div class="password-wrapper">
-                        <input type="password" id="login-password" class="form-control" placeholder="請輸入密碼" autocomplete="current-password">
+                        <input type="password" id="login-password" class="form-control" placeholder="請輸入 8 位數密碼" autocomplete="current-password">
                         <button type="button" class="toggle-pwd-btn" data-target="login-password">顯示</button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">✓ 立即登入</button>
+                <button type="submit" id="submit-login-btn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">✓ 立即登入</button>
             </form>
 
             <!-- 註冊表單 -->
             <form id="register-form" style="display: none;">
                 <div class="form-group">
                     <label for="reg-name">📛 您的稱呼（姓名） <span style="color: red;">*</span></label>
-                    <input type="text" id="reg-name" class="form-control" placeholder="例如：陳伯伯 / 林阿姨">
+                    <input type="text" id="reg-name" class="form-control" placeholder="">
                 </div>
 
                 <div class="form-group">
-                    <label for="reg-account">👤 設定登入賬號 <span style="color: red;">*</span></label>
-                    <input type="text" id="reg-account" class="form-control" placeholder="請輸入英文、數字或手機號碼">
+                    <label for="reg-account">👤 設定登入賬號（限 8 位數） <span style="color: red;">*</span></label>
+                    <input type="text" id="reg-account" class="form-control" placeholder="請輸入剛好 8 位數賬號（不能多也不能少）">
+                    <div id="reg-account-hint" class="input-hint"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="reg-password">🔒 設定密碼 <span style="color: red;">*</span></label>
+                    <label for="reg-password">🔒 設定密碼（限 8 位數） <span style="color: red;">*</span></label>
                     <div class="password-wrapper">
-                        <input type="password" id="reg-password" class="form-control" placeholder="請輸入至少 4 位數密碼">
+                        <input type="password" id="reg-password" class="form-control" placeholder="請輸入剛好 8 位數密碼（不能多也不能少）">
                         <button type="button" class="toggle-pwd-btn" data-target="reg-password">顯示</button>
                     </div>
+                    <div id="reg-password-hint" class="input-hint"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="reg-password-confirm">🔒 再次確認密碼 <span style="color: red;">*</span></label>
+                    <label for="reg-password-confirm">🔒 再次確認密碼（限 8 位數） <span style="color: red;">*</span></label>
                     <div class="password-wrapper">
-                        <input type="password" id="reg-password-confirm" class="form-control" placeholder="請再輸入一次密碼">
+                        <input type="password" id="reg-password-confirm" class="form-control" placeholder="請再次輸入相同的 8 位數密碼">
                         <button type="button" class="toggle-pwd-btn" data-target="reg-password-confirm">顯示</button>
                     </div>
+                    <div id="reg-password-confirm-hint" class="input-hint"></div>
                 </div>
 
-                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;">✓ 完成註冊並登入</button>
+                <button type="submit" id="submit-register-btn" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;">✓ 完成註冊並登入</button>
             </form>
         </div>
     </div>
@@ -1415,8 +1449,8 @@
                 <!-- 操作提示 -->
                 <div class="wechat-notice-box">
                     <strong>📌 充值入帳說明：</strong><br>
-                    1. 點擊上方 <strong>$20、$50 或 $100</strong> 切換對應金額的固定收款碼，打開微信「掃一掃」向 <strong>风华绝代 (**桦)</strong> 完成支付。<br>
-                    2. 支付成功後，上傳微信付款截圖並提交申請；<strong>需經管理員在後台審核確認收款後，儲值金額才會正式計入您的賬戶餘額</strong>。
+1. 點擊上方 <strong>$20、$50 或 $100</strong> 切換對應金額的固定收款碼，打開微信「掃一掃」向 <strong>风华绝代 (**桦)</strong> 完成支付。<br>
+2. 支付成功後，上傳微信付款截圖並提交申請；<strong>需經管理員在後台審核確認收款後，儲值金額才會正式計入您的賬戶餘額</strong>。
                 </div>
 
                 <!-- 付款截圖與確認區 -->
@@ -1549,17 +1583,17 @@
 
             <div class="form-group">
                 <label for="manage-user-name">📛 稱呼（姓名） <span style="color: red;">*</span></label>
-                <input type="text" id="manage-user-name" class="form-control" placeholder="例如：王大明">
+                <input type="text" id="manage-user-name" class="form-control" placeholder="請輸入稱呼或姓名">
             </div>
 
             <div class="form-group">
-                <label for="manage-user-account">👤 登入賬號 <span style="color: red;">*</span></label>
-                <input type="text" id="manage-user-account" class="form-control" placeholder="請輸入登入賬號">
+                <label for="manage-user-account">👤 登入賬號（限 8 位數） <span style="color: red;">*</span></label>
+                <input type="text" id="manage-user-account" class="form-control" placeholder="請輸入剛好 8 位數賬號">
             </div>
 
             <div class="form-group">
-                <label for="manage-user-password">🔒 登入密碼 <span style="color: red;">*</span></label>
-                <input type="text" id="manage-user-password" class="form-control" placeholder="請輸入密碼（至少 4 位數）">
+                <label for="manage-user-password">🔒 登入密碼（限 8 位數） <span style="color: red;">*</span></label>
+                <input type="text" id="manage-user-password" class="form-control" placeholder="請輸入剛好 8 位數密碼">
             </div>
 
             <div class="form-group">
@@ -1747,20 +1781,10 @@
     </div>
 
     <script>
-        // ===== 預設商品數據 =====
-        const DEFAULT_MENU_DATA = [
-            { id: 101, name: '有機高麗菜', category: '蔬菜', emoji: '🥬', description: '高山清甜高麗菜（約600g）', price: 65, type: 'veg' },
-            { id: 102, name: '青江菜', category: '蔬菜', emoji: '🌿', description: '鮮嫩翠綠青江菜（1把）', price: 35, type: 'veg' },
-            { id: 103, name: '紅蘿蔔', category: '蔬菜', emoji: '🥕', description: '營養香甜紅蘿蔔（2條）', price: 40, type: 'veg' },
-            { id: 201, name: '富士蘋果', category: '水果', emoji: '🍎', description: '香脆多汁富士蘋果（2顆）', price: 85, type: 'fruit' },
-            { id: 202, name: '台灣香蕉', category: '水果', emoji: '🍌', description: '香甜軟糯好消化（1串）', price: 50, type: 'fruit' },
-            { id: 203, name: '柳丁', category: '水果', emoji: '🍊', description: '產地新鮮現採柳丁（4顆）', price: 60, type: 'fruit' },
-            { id: 301, name: '去骨雞腿排', category: '生鮮', emoji: '🍗', description: '冷藏鮮嫩去骨雞腿（1片）', price: 95, type: 'fresh' },
-            { id: 302, name: '挪威鮭魚片', category: '生鮮', emoji: '🐟', description: '富含Omega-3厚切鮭魚', price: 160, type: 'fresh' },
-            { id: 303, name: '梅花豬肉片', category: '生鮮', emoji: '🥩', description: '油花均勻新鮮豬肉（300g）', price: 110, type: 'fresh' }
-        ];
+        // ===== 已清除所有原有預設商品，改為完全由管理員自行添加 =====
+        const DEFAULT_MENU_DATA = [];
 
-        const STORAGE_KEY = 'senior_ordering_custom_menu_v3';
+        const STORAGE_KEY = 'senior_ordering_custom_menu_v4';
         const USERS_STORAGE_KEY = 'senior_ordering_users_v3';
         const CURRENT_USER_KEY = 'senior_ordering_current_user_v3';
         const ORDERS_STORAGE_KEY = 'senior_ordering_orders_v2';
@@ -1819,7 +1843,9 @@
 
                 if (this.currentUser && this.currentUser.account === account) {
                     this.currentUser.balance = target.balance;
-                    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+                    try {
+                        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+                    } catch (e) {}
                     this.updateUserDisplay();
                 }
                 return true;
@@ -1844,17 +1870,19 @@
             },
 
             init() {
+                // 優先綁定所有按鈕與表單事件，避免任何外部元件錯誤阻斷操作
+                this.setupEventListeners();
+                this.setupAuthListeners();
+                this.setupManageListeners();
+                this.setupImageUpload();
+                this.setupRechargeListeners();
+
                 this.loadUsersData();
                 this.loadMenuData();
                 this.loadOrdersData();
                 this.loadRechargeData();
                 this.loadTierQrImages();
                 this.generateQRCode();
-                this.setupEventListeners();
-                this.setupAuthListeners();
-                this.setupManageListeners();
-                this.setupImageUpload();
-                this.setupRechargeListeners();
 
                 const urlParams = new URLSearchParams(window.location.search);
                 if (this.currentUser) {
@@ -1866,6 +1894,26 @@
                     }
                 } else {
                     this.showPage('login');
+                }
+            },
+
+            switchAuthMode(mode) {
+                const loginForm = document.getElementById('login-form');
+                const registerForm = document.getElementById('register-form');
+                document.querySelectorAll('.auth-tab').forEach(t => {
+                    if (t.dataset.authMode === mode) {
+                        t.classList.add('active');
+                    } else {
+                        t.classList.remove('active');
+                    }
+                });
+                if (mode === 'register') {
+                    if (loginForm) loginForm.style.display = 'none';
+                    if (registerForm) registerForm.style.display = 'block';
+                    this.clearRegisterHints();
+                } else {
+                    if (loginForm) loginForm.style.display = 'block';
+                    if (registerForm) registerForm.style.display = 'none';
                 }
             },
 
@@ -1906,7 +1954,6 @@
             },
 
             setupRechargeListeners() {
-                // 點擊 20 / 50 / 100 額度卡片
                 document.querySelectorAll('.tier-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const tier = parseInt(btn.dataset.tier);
@@ -1914,7 +1961,6 @@
                     });
                 });
 
-                // 上傳綁定某檔位收款碼圖片（僅管理員可用）
                 const bindTrigger = document.getElementById('trigger-bind-tier-qr-btn');
                 const bindInput = document.getElementById('bind-tier-qr-input');
                 if (bindTrigger && bindInput) {
@@ -1935,7 +1981,6 @@
                     });
                 }
 
-                // 上傳充值付款成功截圖
                 const proofTrigger = document.getElementById('recharge-proof-trigger');
                 const proofInput = document.getElementById('recharge-proof-input');
                 const proofPreview = document.getElementById('recharge-proof-preview');
@@ -2046,7 +2091,6 @@
                 document.getElementById('proof-tier-text').textContent = `$${tier}`;
                 document.getElementById('checkbox-tier-text').textContent = `$${tier}`;
 
-                // 僅管理員顯示「上傳/更換專屬收款碼圖片」區域
                 const adminBindBox = document.getElementById('admin-bind-qr-box');
                 if (adminBindBox) {
                     adminBindBox.style.display = isAdminUser ? 'block' : 'none';
@@ -2077,76 +2121,78 @@
             },
 
             drawTierWechatFallbackCanvas(canvas, tierAmount) {
-                const ctx = canvas.getContext('2d');
-                const w = canvas.width;
-                const h = canvas.height;
+                try {
+                    const ctx = canvas.getContext('2d');
+                    const w = canvas.width;
+                    const h = canvas.height;
 
-                ctx.fillStyle = '#07c160';
-                ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#07c160';
+                    ctx.fillRect(0, 0, w, h);
 
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.moveTo(0, h - 75);
-                ctx.quadraticCurveTo(w / 2, h - 95, w, h - 75);
-                ctx.lineTo(w, h);
-                ctx.lineTo(0, h);
-                ctx.closePath();
-                ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(0, h - 75);
+                    ctx.quadraticCurveTo(w / 2, h - 95, w, h - 75);
+                    ctx.lineTo(w, h);
+                    ctx.lineTo(0, h);
+                    ctx.closePath();
+                    ctx.fill();
 
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 26px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`推荐使用微信支付（$${tierAmount}）`, w / 2, 54);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`推荐使用微信支付（$${tierAmount}）`, w / 2, 54);
 
-                const cardX = 45;
-                const cardY = 80;
-                const cardW = w - 90;
-                const cardH = 292;
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.roundRect(cardX, cardY, cardW, cardH, 16);
-                ctx.fill();
+                    const cardX = 45;
+                    const cardY = 80;
+                    const cardW = w - 90;
+                    const cardH = 292;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.roundRect(cardX, cardY, cardW, cardH, 16);
+                    ctx.fill();
 
-                if (typeof QRious !== 'undefined') {
-                    const tempQr = new QRious({
-                        size: 200,
-                        value: `wxp://f2f0-wechat-recharge-tier-${tierAmount}`,
-                        level: 'H'
-                    });
-                    ctx.drawImage(tempQr.canvas, (w - 200) / 2, cardY + 20);
-                }
+                    if (typeof QRious !== 'undefined') {
+                        const tempQr = new QRious({
+                            size: 200,
+                            value: `wxp://f2f0-wechat-recharge-tier-${tierAmount}`,
+                            level: 'M'
+                        });
+                        ctx.drawImage(tempQr.canvas, (w - 200) / 2, cardY + 20);
+                    }
 
-                ctx.fillStyle = '#e3f2fd';
-                ctx.beginPath();
-                ctx.roundRect(w / 2 - 22, cardY + 98, 44, 44, 8);
-                ctx.fill();
-                ctx.font = '26px sans-serif';
-                ctx.fillText('👩🏻‍🎤', w / 2, cardY + 129);
+                    ctx.fillStyle = '#e3f2fd';
+                    ctx.beginPath();
+                    ctx.roundRect(w / 2 - 22, cardY + 98, 44, 44, 8);
+                    ctx.fill();
+                    ctx.font = '26px sans-serif';
+                    ctx.fillText('👩🏻‍🎤', w / 2, cardY + 129);
 
-                ctx.fillStyle = '#d84315';
-                ctx.font = 'bold 20px sans-serif';
-                ctx.fillText(`固定充值額度：$${tierAmount}`, w / 2, cardY + 245);
+                    ctx.fillStyle = '#d84315';
+                    ctx.font = 'bold 20px sans-serif';
+                    ctx.fillText(`固定充值額度：$${tierAmount}`, w / 2, cardY + 245);
 
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 17px sans-serif';
-                ctx.fillText('风华绝代 (**桦)', w / 2, cardY + 272);
+                    ctx.fillStyle = '#333333';
+                    ctx.font = 'bold 17px sans-serif';
+                    ctx.fillText('风华绝代 (**桦)', w / 2, cardY + 272);
 
-                ctx.fillStyle = '#07c160';
-                ctx.beginPath();
-                ctx.arc(w / 2 - 68, h - 36, 16, 0, Math.PI * 2);
-                ctx.fill();
+                    ctx.fillStyle = '#07c160';
+                    ctx.beginPath();
+                    ctx.arc(w / 2 - 68, h - 36, 16, 0, Math.PI * 2);
+                    ctx.fill();
 
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(w / 2 - 76, h - 36);
-                ctx.lineTo(w / 2 - 70, h - 30);
-                ctx.lineTo(w / 2 - 59, h - 42);
-                ctx.stroke();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(w / 2 - 76, h - 36);
+                    ctx.lineTo(w / 2 - 70, h - 30);
+                    ctx.lineTo(w / 2 - 59, h - 42);
+                    ctx.stroke();
 
-                ctx.fillStyle = '#222222';
-                ctx.font = 'bold 26px sans-serif';
-                ctx.fillText('微信支付', w / 2 + 16, h - 27);
+                    ctx.fillStyle = '#222222';
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.fillText('微信支付', w / 2 + 16, h - 27);
+                } catch (e) {}
             },
 
             updateRechargeSubmitBtnState() {
@@ -2176,7 +2222,6 @@
                 if (submitBtn) submitBtn.disabled = true;
             },
 
-            // 提交充值申請（所有用戶均進入待審核狀態，必須管理員審核通過才到帳）
             submitRechargeRequest() {
                 if (!this.currentUser) return;
                 if (!this.rechargeProofBase64) {
@@ -2191,7 +2236,7 @@
                     userName: this.currentUser.name,
                     amount: amount,
                     proofImage: this.rechargeProofBase64,
-                    status: 'pending', // 統一為 pending，須經管理員審核通過才會入帳
+                    status: 'pending',
                     createdAt: this.formatDateTime(Date.now())
                 };
 
@@ -2210,7 +2255,6 @@
                 }
             },
 
-            // 【管理員】審核通過充值申請並自動加值到會員賬戶
             approveRechargeRecord(rechargeId) {
                 if (!this.isAdmin()) {
                     alert('權限不足：只有管理員可以審核充值！');
@@ -2229,7 +2273,6 @@
                 }
             },
 
-            // 【管理員】駁回充值申請
             rejectRechargeRecord(rechargeId) {
                 if (!this.isAdmin()) {
                     alert('權限不足：只有管理員可以審核充值！');
@@ -2247,11 +2290,9 @@
                 }
             },
 
-            // 渲染【管理員專屬：審核充值中心】
             renderAuditRechargePage() {
                 if (!this.isAdmin()) return;
 
-                // 更新三張收款碼預覽
                 ['20', '50', '100'].forEach(slot => {
                     const imgEl = document.getElementById(`admin-slot-preview-${slot}`);
                     if (imgEl) {
@@ -2267,7 +2308,6 @@
                     }
                 });
 
-                // 更新篩選頁籤樣式
                 document.querySelectorAll('#recharge-audit-tabs .audit-tab').forEach(tab => {
                     if (tab.dataset.rechargeFilter === this.rechargeAuditFilter) {
                         tab.classList.add('wechat-active');
@@ -2358,7 +2398,6 @@
                 }).join('');
             },
 
-            // 渲染【一般會員：我的充值紀錄】
             renderMyRechargeRecordsPage() {
                 const summaryEl = document.getElementById('my-recharge-summary');
                 const listEl = document.getElementById('my-recharge-list');
@@ -2411,7 +2450,6 @@
                 }).join('');
             },
 
-            // 【管理員】審核訂單通過（標記已完成）
             approveOrderRecord(orderNumber) {
                 if (!this.isAdmin()) {
                     alert('權限不足：只有管理員可以審核訂單！');
@@ -2429,7 +2467,6 @@
                 }
             },
 
-            // 【管理員】取消訂單並退回儲值餘額
             cancelAndRefundOrderRecord(orderNumber) {
                 if (!this.isAdmin()) {
                     alert('權限不足：只有管理員可以審核訂單！');
@@ -2455,7 +2492,6 @@
                 }
             },
 
-            // 準備並渲染【管理員專屬：審核訂單中心】
             prepareAndRenderAuditOrdersPage() {
                 if (!this.isAdmin()) return;
 
@@ -2640,13 +2676,15 @@
 
             setCurrentUser(user) {
                 this.currentUser = user;
-                if (user) {
-                    const latestBal = this.getCurrentUserBalance();
-                    this.currentUser.balance = latestBal;
-                    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
-                } else {
-                    localStorage.removeItem(CURRENT_USER_KEY);
-                }
+                try {
+                    if (user) {
+                        const latestBal = this.getCurrentUserBalance();
+                        this.currentUser.balance = latestBal;
+                        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+                    } else {
+                        localStorage.removeItem(CURRENT_USER_KEY);
+                    }
+                } catch (e) {}
                 this.updateUserDisplay();
             },
 
@@ -2655,17 +2693,14 @@
                 const userBar = document.getElementById('user-bar');
                 const balanceEl = document.getElementById('header-wallet-balance');
 
-                // 管理員專屬按鈕
                 const auditRechargeBtn = document.getElementById('open-audit-recharge-btn');
                 const auditOrdersBtn = document.getElementById('open-audit-orders-btn');
                 const addProductBtn = document.getElementById('open-add-product-btn');
                 const usersManageBtn = document.getElementById('open-users-manage-btn');
 
-                // 一般會員按鈕
                 const myRechargeBtn = document.getElementById('open-my-recharge-records-btn');
                 const myOrdersBtn = document.getElementById('open-my-orders-btn');
 
-                // 紅點提示
                 const adminPendingRechargeBadge = document.getElementById('admin-pending-recharge-badge');
                 const adminPendingOrdersBadge = document.getElementById('admin-pending-orders-badge');
                 const memberPendingRechargeBadge = document.getElementById('member-pending-recharge-badge');
@@ -2686,7 +2721,6 @@
                     balanceEl.textContent = this.formatPrice(this.getCurrentUserBalance());
                 }
 
-                // 切換顯示管理員與一般會員的功能按鈕
                 if (auditRechargeBtn) auditRechargeBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
                 if (auditOrdersBtn) auditOrdersBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
                 if (addProductBtn) addProductBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
@@ -2695,21 +2729,18 @@
                 if (myRechargeBtn) myRechargeBtn.style.display = isAdminUser ? 'none' : 'inline-flex';
                 if (myOrdersBtn) myOrdersBtn.style.display = isAdminUser ? 'none' : 'inline-flex';
 
-                // 管理員待審核充值筆數紅點
                 if (adminPendingRechargeBadge) {
                     const pendingRchCount = this.rechargeRecords.filter(r => r.status === 'pending').length;
                     adminPendingRechargeBadge.style.display = pendingRchCount > 0 ? 'inline-block' : 'none';
                     adminPendingRechargeBadge.textContent = pendingRchCount;
                 }
 
-                // 管理員待審核訂單筆數紅點
                 if (adminPendingOrdersBadge) {
                     const pendingOrdCount = this.orders.filter(o => o.status === 'preparing').length;
                     adminPendingOrdersBadge.style.display = pendingOrdCount > 0 ? 'inline-block' : 'none';
                     adminPendingOrdersBadge.textContent = pendingOrdCount;
                 }
 
-                // 一般會員自己待審核的充值筆數紅點
                 if (memberPendingRechargeBadge && !isAdminUser) {
                     const myPendingCount = this.rechargeRecords.filter(
                         r => r.userAccount === this.currentUser?.account && r.status === 'pending'
@@ -2719,27 +2750,189 @@
                 }
             },
 
+            // 註冊表單即時驗證邏輯（限制賬號與密碼必須剛好 8 位數）
+            validateRegisterField(fieldType, forceShowEmpty = false) {
+                const accInput = document.getElementById('reg-account');
+                const accHint = document.getElementById('reg-account-hint');
+                const pwdInput = document.getElementById('reg-password');
+                const pwdHint = document.getElementById('reg-password-hint');
+                const confirmInput = document.getElementById('reg-password-confirm');
+                const confirmHint = document.getElementById('reg-password-confirm-hint');
+
+                const setHintState = (input, hintEl, type, msg) => {
+                    if (!input || !hintEl) return;
+                    input.classList.remove('input-error', 'input-success');
+                    hintEl.classList.remove('error', 'success');
+                    if (type === 'error') {
+                        input.classList.add('input-error');
+                        hintEl.classList.add('error');
+                    } else if (type === 'success') {
+                        input.classList.add('input-success');
+                        hintEl.classList.add('success');
+                    }
+                    hintEl.textContent = msg;
+                };
+
+                if (fieldType === 'account' || fieldType === 'all') {
+                    const val = accInput ? accInput.value : '';
+                    if (!val && !forceShowEmpty) {
+                        setHintState(accInput, accHint, '', '');
+                    } else if (val.includes(' ')) {
+                        setHintState(accInput, accHint, 'error', '❌ 賬號不可包含空格，請輸入剛好 8 位數');
+                    } else if (val.length !== 8) {
+                        const diffText = val.length < 8
+                            ? `還差 ${8 - val.length} 位`
+                            : `多了 ${val.length - 8} 位`;
+                        setHintState(accInput, accHint, 'error', `❌ 賬號只能設置 8 位數（目前 ${val.length} 位，${diffText}）`);
+                    } else if (this.users.some(u => u.account === val)) {
+                        setHintState(accInput, accHint, 'error', '❌ 此 8 位數賬號已被註冊，請換一個賬號');
+                    } else {
+                        setHintState(accInput, accHint, 'success', '✅ 賬號格式正確（剛好 8 位數）');
+                    }
+                }
+
+                if (fieldType === 'password' || fieldType === 'all') {
+                    const val = pwdInput ? pwdInput.value : '';
+                    if (!val && !forceShowEmpty) {
+                        setHintState(pwdInput, pwdHint, '', '');
+                    } else if (val.includes(' ')) {
+                        setHintState(pwdInput, pwdHint, 'error', '❌ 密碼不可包含空格，請輸入剛好 8 位數');
+                    } else if (val.length !== 8) {
+                        const diffText = val.length < 8
+                            ? `還差 ${8 - val.length} 位`
+                            : `多了 ${val.length - 8} 位`;
+                        setHintState(pwdInput, pwdHint, 'error', `❌ 密碼只能設置 8 位數（目前 ${val.length} 位，${diffText}）`);
+                    } else {
+                        setHintState(pwdInput, pwdHint, 'success', '✅ 密碼格式正確（剛好 8 位數）');
+                    }
+                }
+
+                if (fieldType === 'confirm' || fieldType === 'password' || fieldType === 'all') {
+                    const pwdVal = pwdInput ? pwdInput.value : '';
+                    const confirmVal = confirmInput ? confirmInput.value : '';
+                    if (!confirmVal && !forceShowEmpty) {
+                        setHintState(confirmInput, confirmHint, '', '');
+                    } else if (confirmVal.length !== 8) {
+                        const diffText = confirmVal.length < 8
+                            ? `還差 ${8 - confirmVal.length} 位`
+                            : `多了 ${confirmVal.length - 8} 位`;
+                        setHintState(confirmInput, confirmHint, 'error', `❌ 確認密碼也只能設置 8 位數（目前 ${confirmVal.length} 位，${diffText}）`);
+                    } else if (confirmVal !== pwdVal) {
+                        setHintState(confirmInput, confirmHint, 'error', '❌ 兩次輸入的 8 位數密碼不一致，請重新檢查');
+                    } else {
+                        setHintState(confirmInput, confirmHint, 'success', '✅ 兩次輸入的 8 位數密碼一致');
+                    }
+                }
+            },
+
+            clearRegisterHints() {
+                ['reg-account', 'reg-password', 'reg-password-confirm'].forEach(id => {
+                    const input = document.getElementById(id);
+                    const hint = document.getElementById(`${id}-hint`);
+                    if (input) input.classList.remove('input-error', 'input-success');
+                    if (hint) {
+                        hint.classList.remove('error', 'success');
+                        hint.textContent = '';
+                    }
+                });
+            },
+
+            handleLoginSubmit() {
+                const account = (document.getElementById('login-account')?.value || '').trim();
+                const password = (document.getElementById('login-password')?.value || '').trim();
+
+                if (!account) {
+                    alert('請輸入會員賬號');
+                    return;
+                }
+                if (!password) {
+                    alert('請輸入登入密碼');
+                    return;
+                }
+
+                const matchedUser = this.users.find(
+                    u => u.account === account && u.password === password
+                );
+
+                if (!matchedUser) {
+                    alert('賬號或密碼錯誤，請重新確認！\n（若尚未註冊，可點選上方「註冊新賬號」）');
+                    return;
+                }
+
+                this.setCurrentUser({
+                    account: matchedUser.account,
+                    name: matchedUser.name,
+                    balance: matchedUser.balance || 0
+                });
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) loginForm.reset();
+                this.showPage('menu');
+            },
+
+            handleRegisterSubmit() {
+                const nameInput = document.getElementById('reg-name');
+                const regAccountInput = document.getElementById('reg-account');
+                const regPasswordInput = document.getElementById('reg-password');
+                const regConfirmInput = document.getElementById('reg-password-confirm');
+
+                const name = (nameInput?.value || '').trim();
+                const account = regAccountInput ? regAccountInput.value : '';
+                const password = regPasswordInput ? regPasswordInput.value : '';
+                const confirmPwd = regConfirmInput ? regConfirmInput.value : '';
+
+                this.validateRegisterField('all', true);
+
+                if (!name) {
+                    alert('請輸入您的稱呼（姓名）');
+                    if (nameInput) nameInput.focus();
+                    return;
+                }
+                if (account.includes(' ') || account.length !== 8) {
+                    alert(`賬號只能設置 8 位數（不能多也不能少），目前為 ${account.length} 位，請修改後再送出！`);
+                    if (regAccountInput) regAccountInput.focus();
+                    return;
+                }
+                if (this.users.some(u => u.account === account)) {
+                    alert('此 8 位數賬號已被註冊，請換一個賬號或直接登入');
+                    if (regAccountInput) regAccountInput.focus();
+                    return;
+                }
+                if (password.includes(' ') || password.length !== 8) {
+                    alert(`密碼只能設置 8 位數（不能多也不能少），目前為 ${password.length} 位，請修改後再送出！`);
+                    if (regPasswordInput) regPasswordInput.focus();
+                    return;
+                }
+                if (password !== confirmPwd) {
+                    alert('兩次輸入的 8 位數密碼不一致，請重新確認');
+                    if (regConfirmInput) regConfirmInput.focus();
+                    return;
+                }
+
+                const newUser = { account, password, name, balance: 0 };
+                this.users.push(newUser);
+                this.saveUsersData();
+                this.setCurrentUser({ account: newUser.account, name: newUser.name, balance: 0 });
+                const registerForm = document.getElementById('register-form');
+                if (registerForm) registerForm.reset();
+                this.clearRegisterHints();
+                alert(`註冊成功！歡迎您，${name}\n您可以點擊「💳 賬戶充值」進行儲值，經管理員審核通過後即可扣款下單。`);
+                this.showPage('menu');
+            },
+
             setupAuthListeners() {
                 const loginForm = document.getElementById('login-form');
                 const registerForm = document.getElementById('register-form');
 
                 document.querySelectorAll('.auth-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                        tab.classList.add('active');
-                        const mode = tab.dataset.authMode;
-                        if (mode === 'login') {
-                            loginForm.style.display = 'block';
-                            registerForm.style.display = 'none';
-                        } else {
-                            loginForm.style.display = 'none';
-                            registerForm.style.display = 'block';
-                        }
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.switchAuthMode(tab.dataset.authMode);
                     });
                 });
 
                 document.querySelectorAll('.toggle-pwd-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         const input = document.getElementById(btn.dataset.target);
                         if (!input) return;
                         if (input.type === 'password') {
@@ -2752,74 +2945,36 @@
                     });
                 });
 
-                loginForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const account = document.getElementById('login-account').value.trim();
-                    const password = document.getElementById('login-password').value.trim();
+                const regAccountInput = document.getElementById('reg-account');
+                const regPasswordInput = document.getElementById('reg-password');
+                const regConfirmInput = document.getElementById('reg-password-confirm');
 
-                    if (!account) {
-                        alert('請輸入會員賬號');
-                        return;
-                    }
-                    if (!password) {
-                        alert('請輸入登入密碼');
-                        return;
-                    }
+                if (regAccountInput) {
+                    regAccountInput.addEventListener('input', () => this.validateRegisterField('account', false));
+                    regAccountInput.addEventListener('blur', () => this.validateRegisterField('account', true));
+                }
+                if (regPasswordInput) {
+                    regPasswordInput.addEventListener('input', () => this.validateRegisterField('password', false));
+                    regPasswordInput.addEventListener('blur', () => this.validateRegisterField('password', true));
+                }
+                if (regConfirmInput) {
+                    regConfirmInput.addEventListener('input', () => this.validateRegisterField('confirm', false));
+                    regConfirmInput.addEventListener('blur', () => this.validateRegisterField('confirm', true));
+                }
 
-                    const matchedUser = this.users.find(
-                        u => u.account === account && u.password === password
-                    );
-
-                    if (!matchedUser) {
-                        alert('賬號或密碼錯誤，請重新確認！\n（若尚未註冊，可點選上方「註冊新賬號」）');
-                        return;
-                    }
-
-                    this.setCurrentUser({
-                        account: matchedUser.account,
-                        name: matchedUser.name,
-                        balance: matchedUser.balance || 0
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.handleLoginSubmit();
                     });
-                    loginForm.reset();
-                    this.showPage('menu');
-                });
+                }
 
-                registerForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const name = document.getElementById('reg-name').value.trim();
-                    const account = document.getElementById('reg-account').value.trim();
-                    const password = document.getElementById('reg-password').value.trim();
-                    const confirmPwd = document.getElementById('reg-password-confirm').value.trim();
-
-                    if (!name) {
-                        alert('請輸入您的稱呼（姓名）');
-                        return;
-                    }
-                    if (!account) {
-                        alert('請設定登入賬號');
-                        return;
-                    }
-                    if (this.users.some(u => u.account === account)) {
-                        alert('此賬號已被註冊，請換一個賬號或直接登入');
-                        return;
-                    }
-                    if (password.length < 4) {
-                        alert('密碼長度至少需要 4 個字元');
-                        return;
-                    }
-                    if (password !== confirmPwd) {
-                        alert('兩次輸入的密碼不一致，請重新確認');
-                        return;
-                    }
-
-                    const newUser = { account, password, name, balance: 0 };
-                    this.users.push(newUser);
-                    this.saveUsersData();
-                    this.setCurrentUser({ account: newUser.account, name: newUser.name, balance: 0 });
-                    registerForm.reset();
-                    alert(`註冊成功！歡迎您，${name}\n您可以點擊「💳 賬戶充值」進行儲值，經管理員審核通過後即可扣款下單。`);
-                    this.showPage('menu');
-                });
+                if (registerForm) {
+                    registerForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.handleRegisterSubmit();
+                    });
+                }
             },
 
             setupManageListeners() {
@@ -2888,20 +3043,20 @@
 
                 const originalAccount = document.getElementById('edit-user-original-account').value;
                 const name = document.getElementById('manage-user-name').value.trim();
-                const account = document.getElementById('manage-user-account').value.trim();
-                const password = document.getElementById('manage-user-password').value.trim();
+                const account = document.getElementById('manage-user-account').value;
+                const password = document.getElementById('manage-user-password').value;
                 const balanceVal = parseFloat(document.getElementById('manage-user-balance').value || '0');
 
                 if (!name) {
                     alert('請輸入用戶「稱呼（姓名）」');
                     return;
                 }
-                if (!account) {
-                    alert('請輸入用戶「登入賬號」');
+                if (account !== 'admin' && (account.includes(' ') || account.length !== 8)) {
+                    alert(`會員賬號只能設置 8 位數（不能多也不能少），目前為 ${account.length} 位！`);
                     return;
                 }
-                if (password.length < 4) {
-                    alert('密碼長度至少需要 4 個字元');
+                if (password.includes(' ') || password.length !== 8) {
+                    alert(`登入密碼只能設置 8 位數（不能多也不能少），目前為 ${password.length} 位！`);
                     return;
                 }
                 if (isNaN(balanceVal) || balanceVal < 0) {
@@ -2913,7 +3068,7 @@
 
                 if (!originalAccount) {
                     if (this.users.some(u => u.account === account)) {
-                        alert('此賬號已存在，請使用其他賬號名稱！');
+                        alert('此 8 位數賬號已存在，請使用其他賬號名稱！');
                         return;
                     }
                     this.users.push({ account, password, name, balance: cleanBalance });
@@ -3004,7 +3159,6 @@
                 }).join('');
             },
 
-            // 渲染【一般會員：我的訂單查詢】
             renderMyOrdersPage() {
                 const container = document.getElementById('orders-list-container');
                 const banner = document.getElementById('orders-summary-banner');
@@ -3091,7 +3245,16 @@
                     if (saved) {
                         this.menuItems = JSON.parse(saved);
                     } else {
-                        this.menuItems = [...DEFAULT_MENU_DATA];
+                        const legacySaved = localStorage.getItem('senior_ordering_custom_menu_v3');
+                        if (legacySaved) {
+                            const parsedLegacy = JSON.parse(legacySaved);
+                            this.menuItems = Array.isArray(parsedLegacy)
+                                ? parsedLegacy.filter(item => item && item.isCustom === true)
+                                : [];
+                        } else {
+                            this.menuItems = [...DEFAULT_MENU_DATA];
+                        }
+                        this.saveMenuData();
                     }
                 } catch (e) {
                     this.menuItems = [...DEFAULT_MENU_DATA];
@@ -3107,16 +3270,19 @@
             },
 
             generateQRCode() {
-                const currentUrl = window.location.href.split('?')[0];
-                const orderingPageUrl = `${currentUrl}?page=menu`;
-
-                if (typeof QRious !== 'undefined') {
+                try {
+                    const qrEl = document.getElementById('qr-code');
+                    if (!qrEl || typeof QRious === 'undefined') return;
+                    const currentUrl = window.location.href.split('?')[0];
+                    const orderingPageUrl = `${currentUrl}?page=menu`;
                     new QRious({
-                        element: document.getElementById('qr-code'),
+                        element: qrEl,
                         size: 280,
                         value: orderingPageUrl,
-                        level: 'H'
+                        level: 'M'
                     });
+                } catch (e) {
+                    console.warn('QR Code 生成略過：', e);
                 }
             },
 
@@ -3125,6 +3291,8 @@
                 const fileInput = document.getElementById('product-image-input');
                 const preview = document.getElementById('image-preview');
                 const placeholder = document.getElementById('upload-placeholder');
+
+                if (!trigger || !fileInput) return;
 
                 trigger.addEventListener('click', () => {
                     fileInput.click();
@@ -3300,7 +3468,12 @@
 
             setupEventListeners() {
                 document.addEventListener('click', (e) => {
-                    // 放大檢視憑證截圖
+                    // 登入 / 註冊分頁切換（事件委派備援）
+                    const authTab = e.target.closest('.auth-tab');
+                    if (authTab) {
+                        this.switchAuthMode(authTab.dataset.authMode);
+                    }
+
                     if (e.target.classList.contains('zoomable-proof-img')) {
                         const lightbox = document.getElementById('image-lightbox');
                         const lightboxImg = document.getElementById('lightbox-img');
@@ -3319,7 +3492,6 @@
                         this.handleLogout();
                     }
 
-                    // 開啟充值頁面（$20 / $50 / $100）
                     if (e.target.id === 'open-recharge-btn' || e.target.id === 'go-recharge-from-checkout-btn') {
                         this.resetRechargeForm();
                         this.showPage('recharge');
@@ -3333,7 +3505,6 @@
                         this.submitRechargeRequest();
                     }
 
-                    // 【管理員】開啟「審核充值中心」
                     if (e.target.closest('#open-audit-recharge-btn')) {
                         if (!this.isAdmin()) {
                             alert('權限不足：只有管理員（admin）可以審核充值！');
@@ -3348,13 +3519,11 @@
                         this.showPage('menu');
                     }
 
-                    // 【管理員】審核充值頁籤切換
                     if (e.target.closest('#recharge-audit-tabs .audit-tab')) {
                         this.rechargeAuditFilter = e.target.closest('.audit-tab').dataset.rechargeFilter;
                         this.renderAuditRechargePage();
                     }
 
-                    // 【一般會員】開啟「我的充值紀錄」
                     if (e.target.closest('#open-my-recharge-records-btn')) {
                         this.showPage('my-recharge-records');
                     }
@@ -3363,7 +3532,6 @@
                         this.showPage('menu');
                     }
 
-                    // 【管理員】開啟「審核訂單中心」
                     if (e.target.closest('#open-audit-orders-btn')) {
                         if (!this.isAdmin()) {
                             alert('權限不足：只有管理員（admin）可以審核訂單！');
@@ -3378,13 +3546,11 @@
                         this.showPage('menu');
                     }
 
-                    // 【管理員】審核訂單頁籤切換
                     if (e.target.closest('#orders-audit-tabs .audit-tab')) {
                         this.orderAuditFilter = e.target.closest('.audit-tab').dataset.orderFilter;
                         this.renderAuditOrdersPage();
                     }
 
-                    // 【管理員】在審核充值頁上傳 20 / 50 / 100 槽位收款碼
                     if (e.target.closest('.admin-upload-slot-btn')) {
                         if (!this.isAdmin()) {
                             alert('權限不足：只有管理員（admin）可以上傳或更換專屬收款碼圖片！');
@@ -3396,7 +3562,6 @@
                         if (bindInput) bindInput.click();
                     }
 
-                    // 【管理員】審核通過 / 駁回充值
                     if (e.target.closest('.approve-recharge-btn')) {
                         const id = e.target.closest('.approve-recharge-btn').dataset.id;
                         this.approveRechargeRecord(id);
@@ -3406,7 +3571,6 @@
                         this.rejectRechargeRecord(id);
                     }
 
-                    // 【管理員】審核通過 / 取消退回訂單
                     if (e.target.closest('.approve-order-audit-btn')) {
                         const orderId = e.target.closest('.approve-order-audit-btn').dataset.orderId;
                         this.approveOrderRecord(orderId);
@@ -3452,7 +3616,6 @@
                         this.deleteUserAccount(acc);
                     }
 
-                    // 【一般會員】開啟我的訂單
                     if (e.target.id === 'open-my-orders-btn' || e.target.id === 'view-my-orders-after-success-btn') {
                         document.getElementById('order-search-input').value = '';
                         this.showPage('orders');
@@ -3734,7 +3897,6 @@
                     pageName = 'login';
                 }
 
-                // 嚴格防護管理員專屬頁面權限
                 const adminOnlyPages = ['add-product', 'users', 'audit-recharge', 'audit-orders'];
                 if (adminOnlyPages.includes(pageName) && !this.isAdmin()) {
                     alert('權限不足：只有管理員（admin）可以存取此功能！');
@@ -3806,9 +3968,16 @@
                     : this.menuItems.filter(item => item.category === this.selectedCategory);
 
                 if (filteredItems.length === 0) {
-                    const hintText = isAdminUser
-                        ? `目前「${this.selectedCategory}」分類尚無商品，請點擊上方「➕ 添加商品」新增！`
-                        : `目前「${this.selectedCategory}」分類尚無商品`;
+                    let hintText = '';
+                    if (this.selectedCategory === '全部') {
+                        hintText = isAdminUser
+                            ? '目前商品列表是空的，請點擊上方「➕ 添加商品」自行新增商品！'
+                            : '目前尚無上架商品，請稍後再來選購';
+                    } else {
+                        hintText = isAdminUser
+                            ? `目前「${this.selectedCategory}」分類尚無商品，請點擊上方「➕ 添加商品」新增！`
+                            : `目前「${this.selectedCategory}」分類尚無商品`;
+                    }
                     menuGrid.innerHTML = `<div class="empty-category-msg">${hintText}</div>`;
                     return;
                 }
@@ -3821,7 +3990,7 @@
                         ? `<img src="${item.image}" alt="${item.name}">`
                         : item.emoji;
 
-                    const deleteBtnHtml = (isAdminUser && item.isCustom)
+                    const deleteBtnHtml = isAdminUser
                         ? `<button class="delete-item-btn" data-id="${item.id}" title="刪除此商品">🗑️ 刪除</button>`
                         : '';
 
