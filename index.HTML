@@ -1,0 +1,4186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>樂齡生鮮採購系統（儲值會員版）</title>
+    <!-- 引入 QRious 生成 QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #e65100;
+            --primary-hover: #bf360c;
+            --secondary-color: #f5f5f5;
+            --accent-color: #d84315;
+            --wechat-green: #07c160;
+            --wechat-green-dark: #06ad56;
+            --wallet-gold: #f57c00;
+            --text-dark: #212121;
+            --text-light: #616161;
+            --bg-color: #fafafa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.5;
+            padding-bottom: 110px;
+        }
+
+        /* 頁面切換控制 */
+        .page {
+            display: none;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* 樂齡友善大按鈕設計 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 1.25rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-wechat {
+            background-color: var(--wechat-green);
+            color: #ffffff;
+        }
+
+        .btn-wechat:hover:not(:disabled) {
+            background-color: var(--wechat-green-dark);
+        }
+
+        .btn-wallet {
+            background: linear-gradient(135deg, #ff8f00, #ef6c00);
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(239, 108, 0, 0.28);
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: var(--text-dark);
+        }
+
+        .btn-success {
+            background-color: #2e7d32;
+            color: #ffffff;
+        }
+
+        .btn-info {
+            background-color: #1565c0;
+            color: #ffffff;
+        }
+
+        .btn-warning {
+            background-color: #ef6c00;
+            color: #ffffff;
+        }
+
+        .btn-purple {
+            background-color: #6a1b9a;
+            color: #ffffff;
+        }
+
+        .btn-danger-light {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .btn-small {
+            padding: 0.6rem 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* 登入 / 註冊頁面 */
+        .login-page {
+            padding-top: 2rem;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-header h1 {
+            font-size: 2.1rem;
+            color: var(--primary-color);
+            margin-bottom: 0.35rem;
+        }
+
+        .login-header p {
+            font-size: 1.15rem;
+            color: var(--text-light);
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: #f5f5f5;
+            padding: 0.4rem;
+            border-radius: 14px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.85rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            background: #ffffff;
+            color: var(--primary-color);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .password-wrapper .form-control {
+            padding-right: 4.5rem;
+        }
+
+        .toggle-pwd-btn {
+            position: absolute;
+            right: 10px;
+            background: #eeeeee;
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 0.7rem;
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text-dark);
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* 即時輸入驗證提示文字 */
+        .input-hint {
+            font-size: 1.05rem;
+            font-weight: bold;
+            margin-top: 0.4rem;
+            line-height: 1.4;
+        }
+
+        .input-hint.error {
+            color: #c62828;
+        }
+
+        .input-hint.success {
+            color: #2e7d32;
+        }
+
+        .form-control.input-error {
+            border-color: #c62828;
+            background-color: #fff8f8;
+        }
+
+        .form-control.input-success {
+            border-color: #2e7d32;
+        }
+
+        /* 頂部會員狀態與儲值錢包欄 */
+        .user-bar {
+            background: #fff3e0;
+            border: 2px solid #ffcc80;
+            padding: 0.85rem 1rem;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #e65100;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .user-bar.admin-mode {
+            background: #e8f5e9;
+            border-color: #a5d6a7;
+            color: #1b5e20;
+        }
+
+        .wallet-pill {
+            background: #ffffff;
+            border: 2px solid #ffb74d;
+            color: #d84315;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .logout-btn {
+            padding: 0.45rem 0.85rem;
+            font-size: 1rem;
+            border-radius: 8px;
+        }
+
+        /* QR Code 頁面 */
+        .qr-page {
+            text-align: center;
+            padding-top: 2rem;
+        }
+
+        .qr-container {
+            background: var(--card-bg);
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .qr-container h1 {
+            font-size: 2.1rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        #qr-code {
+            margin: 1rem auto;
+            display: block;
+            max-width: 100%;
+            cursor: pointer;
+        }
+
+        .qr-instruction {
+            font-size: 1.35rem;
+            font-weight: bold;
+            margin-top: 1.25rem;
+            color: var(--text-dark);
+        }
+
+        /* 充值頁面專屬樣式 */
+        .recharge-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(7, 193, 96, 0.16);
+            border: 3px solid var(--wechat-green);
+        }
+
+        .recharge-banner {
+            background: var(--wechat-green);
+            color: #ffffff;
+            padding: 1.25rem 1rem;
+            text-align: center;
+        }
+
+        .recharge-banner h1 {
+            font-size: 1.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .recharge-banner p {
+            font-size: 1.15rem;
+            opacity: 0.95;
+        }
+
+        .recharge-body {
+            padding: 1.5rem 1.25rem;
+            text-align: center;
+        }
+
+        .current-balance-banner {
+            background: #fff8e1;
+            border: 2px solid #ffe082;
+            border-radius: 14px;
+            padding: 0.85rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .recharge-tiers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.35rem;
+        }
+
+        .tier-btn {
+            background: #ffffff;
+            border: 3px solid #dcdcdc;
+            border-radius: 16px;
+            padding: 1.1rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .tier-btn .tier-amount {
+            font-size: 1.85rem;
+            font-weight: bold;
+            color: var(--text-dark);
+            display: block;
+        }
+
+        .tier-btn .tier-label {
+            font-size: 1rem;
+            color: var(--text-light);
+            font-weight: bold;
+            margin-top: 0.2rem;
+            display: block;
+        }
+
+        .tier-btn.selected {
+            border-color: var(--wechat-green);
+            background: #e8f8f0;
+            box-shadow: 0 4px 12px rgba(7, 193, 96, 0.22);
+            transform: translateY(-2px);
+        }
+
+        .tier-btn.selected .tier-amount,
+        .tier-btn.selected .tier-label {
+            color: #06964b;
+        }
+
+        .wechat-qr-wrapper {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 0.55rem;
+            display: inline-block;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+            margin-bottom: 0.75rem;
+            max-width: 310px;
+            width: 100%;
+            border: 2px solid #e0e0e0;
+        }
+
+        .wechat-qr-wrapper img,
+        .wechat-qr-wrapper canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .wechat-notice-box {
+            background: #fff8e1;
+            border-left: 5px solid #ffb300;
+            padding: 0.9rem 1rem;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 1.1rem;
+            color: #5d4037;
+            margin-bottom: 1.25rem;
+            line-height: 1.6;
+        }
+
+        .wechat-verify-box {
+            background: #f5f5f5;
+            border-radius: 14px;
+            padding: 1.15rem;
+            text-align: left;
+            margin-bottom: 1.25rem;
+        }
+
+        .wechat-checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-dark);
+            cursor: pointer;
+            margin-top: 0.85rem;
+            background: #ffffff;
+            padding: 0.85rem;
+            border-radius: 10px;
+            border: 2px solid #dcdcdc;
+        }
+
+        .wechat-checkbox-label input[type="checkbox"] {
+            width: 26px;
+            height: 26px;
+            margin-top: 2px;
+            accent-color: var(--wechat-green);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        /* 菜單頁面 */
+        .menu-header {
+            text-align: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .menu-header h1 {
+            font-size: 2.2rem;
+        }
+
+        .menu-header p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.65rem;
+            margin-top: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .header-action-btn {
+            padding: 0.6rem 0.95rem;
+            font-size: 1.05rem;
+            border-radius: 10px;
+        }
+
+        .badge-count {
+            background: #d32f2f;
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.9rem;
+            margin-left: 0.35rem;
+        }
+
+        /* 審核狀態篩選頁籤 */
+        .audit-filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .audit-tab {
+            flex: 1;
+            min-width: 110px;
+            padding: 0.65rem 0.75rem;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border: 2px solid #dcdcdc;
+            border-radius: 10px;
+            background: #ffffff;
+            color: var(--text-dark);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .audit-tab.active {
+            background: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+        }
+
+        .audit-tab.wechat-active {
+            background: var(--wechat-green);
+            color: #ffffff;
+            border-color: var(--wechat-green);
+        }
+
+        /* 頂部分類篩選欄 */
+        .category-tabs {
+            display: flex;
+            gap: 0.6rem;
+            overflow-x: auto;
+            padding: 0.5rem 0.25rem 1rem 0.25rem;
+            margin-bottom: 0.75rem;
+            -webkit-overflow-scrolling: touch;
+            justify-content: center;
+        }
+
+        .category-tab {
+            flex: 0 0 auto;
+            padding: 0.7rem 1.25rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: 2px solid #dcdcdc;
+            border-radius: 999px;
+            background-color: #ffffff;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-tab.active {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+            box-shadow: 0 3px 8px rgba(230, 81, 0, 0.25);
+        }
+
+        .empty-category-msg {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 16px;
+            font-size: 1.3rem;
+            color: var(--text-light);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .menu-item {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .delete-item-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ffebee;
+            color: #c62828;
+            border: none;
+            border-radius: 8px;
+            padding: 0.25rem 0.55rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .edit-price-btn {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 0.3rem 0.65rem;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 0.45rem;
+            vertical-align: middle;
+        }
+
+        .edit-price-btn:hover {
+            background: #bbdefb;
+        }
+
+        .menu-item-image {
+            font-size: 3.5rem;
+            text-align: center;
+            margin-bottom: 0.75rem;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #f9f9f9;
+        }
+
+        .menu-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .menu-item h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .menu-item-category {
+            display: inline-block;
+            background: #fff3e0;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            font-weight: bold;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            width: fit-content;
+        }
+
+        .menu-item-description {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        .menu-item-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+
+        .price-box {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* 表單樣式 */
+        .form-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            font-size: 1.2rem;
+            border: 2px solid #dcdcdc;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .image-upload-box {
+            border: 3px dashed #bdbdbd;
+            border-radius: 14px;
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            background-color: #fafafa;
+            transition: border-color 0.2s;
+        }
+
+        .image-upload-box:hover {
+            border-color: var(--primary-color);
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 12px;
+            margin-top: 0.75rem;
+            display: none;
+            object-fit: cover;
+        }
+
+        /* 用戶管理 & 充值審核卡片樣式 */
+        .page-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .page-top-bar h1 {
+            font-size: 1.85rem;
+        }
+
+        .search-filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .user-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-left: 6px solid var(--primary-color);
+        }
+
+        .user-card.is-admin-card {
+            border-left-color: #2e7d32;
+            background: #f9fdf9;
+        }
+
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.65rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .user-card-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.65rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .role-badge.admin {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .role-badge.member {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .user-card-meta {
+            font-size: 1.15rem;
+            color: var(--text-light);
+            margin-bottom: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .user-card-actions {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        /* 訂單 & 充值紀錄卡片樣式 */
+        .order-history-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-top: 5px solid var(--primary-color);
+        }
+
+        .order-history-card.recharge-record {
+            border-top-color: var(--wechat-green);
+        }
+
+        .order-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+            border-bottom: 1px solid #eeeeee;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .order-id-text {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .order-time-text {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-top: 0.2rem;
+        }
+
+        .order-status-badge {
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .order-status-badge.preparing {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .order-status-badge.completed {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .order-status-badge.rejected {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .order-buyer-tag {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+            display: inline-block;
+        }
+
+        .order-items-list {
+            margin-bottom: 0.75rem;
+        }
+
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.15rem;
+            padding: 0.3rem 0;
+        }
+
+        .order-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px dashed #eeeeee;
+            padding-top: 0.75rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .order-total-highlight {
+            font-size: 1.45rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .proof-thumb-preview {
+            margin-top: 0.65rem;
+            max-width: 170px;
+            border-radius: 8px;
+            border: 2px solid #dcdcdc;
+            display: block;
+            cursor: zoom-in;
+        }
+
+        /* 圖片放大檢視燈箱 */
+        .image-lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .image-lightbox.active {
+            display: flex;
+        }
+
+        .image-lightbox img {
+            max-width: 95%;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 數量加減器 */
+        .quantity-selector {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f5f5f5;
+            padding: 0.3rem 0.6rem;
+            border-radius: 10px;
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+        }
+
+        .quantity-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* 底部購物車浮動欄 */
+        .cart-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+            padding: 0.85rem 1rem;
+            z-index: 100;
+        }
+
+        .cart-info {
+            max-width: 640px;
+            margin: 0 auto 0.5rem auto;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .cart-total {
+            color: var(--accent-color);
+            font-size: 1.4rem;
+        }
+
+        .cart-buttons {
+            max-width: 640px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* 購物車與結帳頁面 */
+        .cart-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 3rem 1rem;
+            font-size: 1.4rem;
+            color: var(--text-light);
+            background: var(--card-bg);
+            border-radius: 16px;
+        }
+
+        .cart-item {
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .cart-item h3 {
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cart-item-thumb {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .cart-item-quantity {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        .cart-item-total {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: right;
+        }
+
+        .order-summary {
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-row.total {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            border-top: 2px solid #eeeeee;
+            padding-top: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+
+        /* 支付選項卡片 */
+        .options-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .options-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.85rem;
+        }
+
+        .option-card {
+            background: var(--card-bg);
+            border: 3px solid #e0e0e0;
+            border-radius: 14px;
+            padding: 1.25rem 0.75rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-card.selected {
+            border-color: var(--primary-color);
+            background-color: #fff3e0;
+            color: var(--primary-color);
+        }
+
+        .option-card[data-value="wallet"].selected {
+            border-color: #ef6c00;
+            background-color: #fff8e1;
+            color: #e65100;
+        }
+
+        .payment-icon {
+            font-size: 2rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .insufficient-alert-box {
+            background: #ffebee;
+            border: 2px solid #ef9a9a;
+            color: #b71c1c;
+            padding: 1rem;
+            border-radius: 14px;
+            margin-bottom: 1.25rem;
+            font-size: 1.15rem;
+            font-weight: bold;
+            display: none;
+        }
+
+        /* 訂單確認頁面 */
+        .confirmation-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .confirmation-section {
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 14px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .confirmation-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #eeeeee;
+            padding-bottom: 0.5rem;
+        }
+
+        .confirmation-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 成功頁面 */
+        .success-page {
+            text-align: center;
+            padding-top: 2.5rem;
+        }
+
+        .success-icon {
+            font-size: 4.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-page h1 {
+            font-size: 2.2rem;
+            color: #2e7d32;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-number {
+            background: #e8f5e9;
+            color: #1b5e20;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            letter-spacing: 1px;
+        }
+
+        .success-buttons {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* 管理員三檔收款碼設定格子 */
+        .admin-qr-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .admin-qr-slot-card {
+            background: #f9f9f9;
+            border: 2px dashed #bdbdbd;
+            border-radius: 12px;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+        }
+
+        .admin-qr-slot-card img {
+            width: 100%;
+            max-width: 110px;
+            border-radius: 8px;
+            margin: 0.5rem auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 憑證截圖放大檢視燈箱 -->
+    <div id="image-lightbox" class="image-lightbox">
+        <img id="lightbox-img" src="" alt="放大憑證預覽">
+        <button type="button" class="btn btn-secondary" id="close-lightbox-btn">✕ 關閉放大預覽</button>
+    </div>
+
+    <!-- 共用隱藏檔案選擇器（僅供管理員上傳收款碼使用） -->
+    <input type="file" id="bind-tier-qr-input" accept="image/*" style="display: none;">
+
+    <!-- 賬號登入 / 註冊頁面 -->
+    <div id="login-page" class="page login-page active">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🛒 樂齡生鮮採購系統</h1>
+                <p>會員儲值下單・方便快捷不漏單</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button type="button" id="tab-btn-login" class="auth-tab active" data-auth-mode="login">🔑 賬號登入</button>
+                <button type="button" id="tab-btn-register" class="auth-tab" data-auth-mode="register">📝 註冊新賬號</button>
+            </div>
+
+            <!-- 登入表單 -->
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-account">👤 會員賬號（8 位數）</label>
+                    <input type="text" id="login-account" class="form-control" placeholder="請輸入 8 位數賬號" autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">🔒 登入密碼（8 位數）</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="login-password" class="form-control" placeholder="請輸入 8 位數密碼" autocomplete="current-password">
+                        <button type="button" class="toggle-pwd-btn" data-target="login-password">顯示</button>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-login-btn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">✓ 立即登入</button>
+            </form>
+
+            <!-- 註冊表單 -->
+            <form id="register-form" style="display: none;">
+                <div class="form-group">
+                    <label for="reg-name">📛 您的稱呼（姓名） <span style="color: red;">*</span></label>
+                    <input type="text" id="reg-name" class="form-control" placeholder="">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-account">👤 設定登入賬號（限 8 位數） <span style="color: red;">*</span></label>
+                    <input type="text" id="reg-account" class="form-control" placeholder="請輸入剛好 8 位數賬號（不能多也不能少）">
+                    <div id="reg-account-hint" class="input-hint"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">🔒 設定密碼（限 8 位數） <span style="color: red;">*</span></label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reg-password" class="form-control" placeholder="請輸入剛好 8 位數密碼（不能多也不能少）">
+                        <button type="button" class="toggle-pwd-btn" data-target="reg-password">顯示</button>
+                    </div>
+                    <div id="reg-password-hint" class="input-hint"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password-confirm">🔒 再次確認密碼（限 8 位數） <span style="color: red;">*</span></label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reg-password-confirm" class="form-control" placeholder="請再次輸入相同的 8 位數密碼">
+                        <button type="button" class="toggle-pwd-btn" data-target="reg-password-confirm">顯示</button>
+                    </div>
+                    <div id="reg-password-confirm-hint" class="input-hint"></div>
+                </div>
+
+                <button type="submit" id="submit-register-btn" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;">✓ 完成註冊並登入</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- QR Code 頁面 -->
+    <div id="qr-page" class="page qr-page">
+        <div class="qr-container">
+            <h1>樂齡生鮮採購系統</h1>
+            <canvas id="qr-code"></canvas>
+            <p class="qr-instruction">👆 掃描 QR Code 開始選購</p>
+            <div style="margin-top: 1.5rem;">
+                <button class="btn btn-primary" id="direct-menu-btn">直接進入商品列表 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 菜單頁面 -->
+    <div id="menu-page" class="page menu-page">
+        <!-- 頂部會員歡迎、儲值餘額與充值按鈕 -->
+        <div class="user-bar" id="user-bar">
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <span id="current-user-label">👤 您好，會員</span>
+                <div>
+                    <span class="wallet-pill">💰 儲值餘額：<span id="header-wallet-balance">$0</span></span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn btn-wallet btn-small" id="open-recharge-btn">💳 賬戶充值</button>
+                <button class="btn btn-danger-light logout-btn" id="logout-btn">🚪 登出</button>
+            </div>
+        </div>
+
+        <div class="menu-header">
+            <h1>🛒 商品列表</h1>
+            <p>先充值儲值金，下單直接扣款超方便</p>
+            <div class="header-actions">
+                <!-- 僅 admin 登入可見的專屬管理功能 -->
+                <button class="btn btn-wechat header-action-btn" id="open-audit-recharge-btn" style="display: none;">💰 審核充值<span class="badge-count" id="admin-pending-recharge-badge" style="display: none;">0</span></button>
+                <button class="btn btn-purple header-action-btn" id="open-audit-orders-btn" style="display: none;">📦 審核訂單<span class="badge-count" id="admin-pending-orders-badge" style="display: none;">0</span></button>
+                <button class="btn btn-success header-action-btn" id="open-add-product-btn" style="display: none;">➕ 添加商品</button>
+                <button class="btn btn-info header-action-btn" id="open-users-manage-btn" style="display: none;">👥 用戶與餘額</button>
+
+                <!-- 一般會員可見的個人紀錄功能 -->
+                <button class="btn btn-wechat header-action-btn" id="open-my-recharge-records-btn">🧾 我的充值紀錄<span class="badge-count" id="member-pending-recharge-badge" style="display: none;">0</span></button>
+                <button class="btn btn-warning header-action-btn" id="open-my-orders-btn">📋 我的訂單</button>
+                <button class="btn btn-secondary header-action-btn" id="show-qr-btn">📱 QR Code</button>
+            </div>
+        </div>
+
+        <!-- 頂部分類篩選按鈕 -->
+        <div class="category-tabs" id="category-tabs">
+            <button class="category-tab active" data-category="全部">全部</button>
+            <button class="category-tab" data-category="蔬菜">🥬 蔬菜</button>
+            <button class="category-tab" data-category="水果">🍎 水果</button>
+            <button class="category-tab" data-category="生鮮">🥩 生鮮</button>
+        </div>
+        
+        <div id="menu-items" class="menu-grid"></div>
+        
+        <!-- 購物車浮動欄 -->
+        <div class="cart-section" style="display: none;">
+            <div class="cart-info">
+                <span class="cart-count" id="cart-count">0 項商品</span>
+                <span class="cart-total" id="cart-total">$0</span>
+            </div>
+            <div class="cart-buttons">
+                <button class="btn btn-secondary cart-btn" style="flex: 1;">🛒 查看購物車 (0)</button>
+                <button class="btn btn-primary" id="checkout-btn" style="flex: 1;">✓ 確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 會員微信充值頁面（20 / 50 / 100 三個固定額度 + 三張固定支付二維碼） -->
+    <div id="recharge-page" class="page">
+        <div class="recharge-card">
+            <div class="recharge-banner">
+                <h1>💬 微信錢包儲值</h1>
+                <p>請點選充值金額（$20 / $50 / $100），掃描對應二維碼付款</p>
+            </div>
+
+            <div class="recharge-body">
+                <!-- 目前餘額顯示 -->
+                <div class="current-balance-banner">
+                    <span>💰 目前賬戶儲值餘額：</span>
+                    <span style="color: var(--accent-color); font-size: 1.5rem;" id="recharge-page-current-balance">$0</span>
+                </div>
+
+                <!-- 三個固定充值額度按鈕 -->
+                <div style="text-align: left; font-size: 1.25rem; font-weight: bold; margin-bottom: 0.65rem;">
+                    1️⃣ 請點擊選擇充值金額：
+                </div>
+                <div class="recharge-tiers-grid" id="recharge-tiers-grid">
+                    <button type="button" class="tier-btn selected" data-tier="20">
+                        <span class="tier-amount">$20</span>
+                        <span class="tier-label">儲值 20 元</span>
+                    </button>
+                    <button type="button" class="tier-btn" data-tier="50">
+                        <span class="tier-amount">$50</span>
+                        <span class="tier-label">儲值 50 元</span>
+                    </button>
+                    <button type="button" class="tier-btn" data-tier="100">
+                        <span class="tier-amount">$100</span>
+                        <span class="tier-label">儲值 100 元</span>
+                    </button>
+                </div>
+
+                <!-- 對應額度的固定微信收款二維碼顯示區 -->
+                <div style="text-align: left; font-size: 1.25rem; font-weight: bold; margin-bottom: 0.65rem;">
+                    2️⃣ 微信掃碼支付 <span id="selected-tier-badge" style="color: var(--wechat-green-dark);">$20</span> 固定收款碼：
+                </div>
+                <div class="wechat-qr-wrapper">
+                    <img id="tier-wechat-qr-img" src="" alt="微信固定金額收款碼">
+                    <canvas id="tier-wechat-qr-canvas" width="360" height="470" style="display: none;"></canvas>
+                </div>
+
+                <!-- 僅管理員可見：單檔位綁定收款碼按鈕 -->
+                <div id="admin-bind-qr-box" style="margin-bottom: 1rem; display: none;">
+                    <button type="button" class="btn btn-secondary btn-small" id="trigger-bind-tier-qr-btn">
+                        📷 上傳 / 更換【<span id="bind-btn-tier-text">$20</span>】專屬收款碼圖片
+                    </button>
+                    <div id="tier-qr-status-hint" style="font-size: 0.95rem; margin-top: 0.35rem;"></div>
+                </div>
+
+                <!-- 操作提示 -->
+                <div class="wechat-notice-box">
+                    <strong>📌 充值入帳說明：</strong><br>
+1. 點擊上方 <strong>$20、$50 或 $100</strong> 切換對應金額的固定收款碼，打開微信「掃一掃」向 <strong>风华绝代 (**桦)</strong> 完成支付。<br>
+2. 支付成功後，上傳微信付款截圖並提交申請；<strong>需經管理員在後台審核確認收款後，儲值金額才會正式計入您的賬戶餘額</strong>。
+                </div>
+
+                <!-- 付款截圖與確認區 -->
+                <div class="wechat-verify-box">
+                    <label style="display: block; font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;">
+                        3️⃣ 上傳本次【<span id="proof-tier-text">$20</span>】微信付款成功截圖 <span style="color: red;">*</span>
+                    </label>
+                    <div class="image-upload-box" id="recharge-proof-trigger" style="background: #ffffff; padding: 1rem;">
+                        <div id="recharge-proof-placeholder">
+                            <div style="font-size: 2rem;">🧾</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: var(--wechat-green-dark);">點擊上傳微信付款成功截圖</div>
+                            <div style="font-size: 0.95rem; color: var(--text-light);">必須上傳截圖才可提交充值申請</div>
+                        </div>
+                        <img id="recharge-proof-preview" class="image-preview" alt="充值付款憑證預覽">
+                    </div>
+                    <input type="file" id="recharge-proof-input" accept="image/*" style="display: none;">
+
+                    <label class="wechat-checkbox-label" for="recharge-paid-checkbox">
+                        <input type="checkbox" id="recharge-paid-checkbox">
+                        <span>我確認已在微信掃碼支付 <strong id="checkbox-tier-text" style="color: #06964b;">$20</strong></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" id="back-from-recharge-btn" style="flex: 1; min-width: 130px;">← 返回</button>
+                    <button type="button" class="btn btn-wechat" id="submit-recharge-request-btn" style="flex: 2; min-width: 210px;" disabled>✅ 提交充值申請</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 【管理員專屬功能 1】審核充值中心 -->
+    <div id="audit-recharge-page" class="page">
+        <div class="page-top-bar">
+            <h1>💰 審核充值中心</h1>
+            <button class="btn btn-secondary btn-small" id="back-from-audit-recharge-btn">← 返回列表</button>
+        </div>
+
+        <!-- 管理員三張固定收款碼快速設定面板 -->
+        <div class="form-card">
+            <h2 style="font-size: 1.35rem; color: var(--wechat-green-dark); margin-bottom: 0.35rem;">💬 管理員專屬：三檔固定微信收款碼設定</h2>
+            <p style="font-size: 1rem; color: var(--text-light);">僅管理員可上傳或更換 $20、$50、$100 的專屬收款碼圖片：</p>
+            <div class="admin-qr-slots">
+                <div class="admin-qr-slot-card">
+                    <strong>$20 收款碼</strong>
+                    <img id="admin-slot-preview-20" src="" alt="$20收款碼">
+                    <button type="button" class="btn btn-wechat btn-small admin-upload-slot-btn" data-slot-tier="20" style="width: 100%; font-size: 0.95rem; padding: 0.45rem;">上傳 / 更換 $20</button>
+                </div>
+                <div class="admin-qr-slot-card">
+                    <strong>$50 收款碼</strong>
+                    <img id="admin-slot-preview-50" src="" alt="$50收款碼">
+                    <button type="button" class="btn btn-wechat btn-small admin-upload-slot-btn" data-slot-tier="50" style="width: 100%; font-size: 0.95rem; padding: 0.45rem;">上傳 / 更換 $50</button>
+                </div>
+                <div class="admin-qr-slot-card">
+                    <strong>$100 收款碼</strong>
+                    <img id="admin-slot-preview-100" src="" alt="$100收款碼">
+                    <button type="button" class="btn btn-wechat btn-small admin-upload-slot-btn" data-slot-tier="100" style="width: 100%; font-size: 0.95rem; padding: 0.45rem;">上傳 / 更換 $100</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 審核狀態篩選按鈕 -->
+        <div class="audit-filter-tabs" id="recharge-audit-tabs">
+            <button type="button" class="audit-tab wechat-active" data-recharge-filter="pending">⏳ 待審核</button>
+            <button type="button" class="audit-tab" data-recharge-filter="approved">✅ 已入帳</button>
+            <button type="button" class="audit-tab" data-recharge-filter="rejected">❌ 已駁回</button>
+            <button type="button" class="audit-tab" data-recharge-filter="ALL">全部紀錄</button>
+        </div>
+
+        <div class="search-filter-bar">
+            <input type="text" id="audit-recharge-search-input" class="form-control" placeholder="🔍 搜尋會員姓名、賬號或充值單號...">
+        </div>
+
+        <div id="audit-recharge-summary" style="margin-bottom: 1rem; font-size: 1.15rem; font-weight: bold; color: var(--text-light);"></div>
+        <div id="audit-recharge-list"></div>
+    </div>
+
+    <!-- 【一般會員】我的充值紀錄頁面 -->
+    <div id="my-recharge-records-page" class="page">
+        <div class="page-top-bar">
+            <h1>🧾 我的充值紀錄</h1>
+            <button class="btn btn-secondary btn-small" id="back-from-my-recharge-btn">← 返回列表</button>
+        </div>
+
+        <div id="my-recharge-summary" style="margin-bottom: 1rem; font-size: 1.15rem; font-weight: bold; color: var(--text-light);"></div>
+        <div id="my-recharge-list"></div>
+    </div>
+
+    <!-- 【管理員專屬功能 2】審核訂單中心 -->
+    <div id="audit-orders-page" class="page">
+        <div class="page-top-bar">
+            <h1>📦 審核訂單中心</h1>
+            <button class="btn btn-secondary btn-small" id="back-from-audit-orders-btn">← 返回列表</button>
+        </div>
+
+        <!-- 訂單審核狀態篩選按鈕 -->
+        <div class="audit-filter-tabs" id="orders-audit-tabs">
+            <button type="button" class="audit-tab active" data-order-filter="preparing">⏳ 待審核</button>
+            <button type="button" class="audit-tab" data-order-filter="completed">✅ 已審核完成</button>
+            <button type="button" class="audit-tab" data-order-filter="cancelled">❌ 已取消退回</button>
+            <button type="button" class="audit-tab" data-order-filter="ALL">全部訂單</button>
+        </div>
+
+        <div class="search-filter-bar">
+            <select id="audit-order-user-filter" class="form-control" style="flex: 1; min-width: 180px;">
+                <option value="ALL">👥 顯示所有用戶訂單</option>
+            </select>
+            <input type="text" id="audit-order-search-input" class="form-control" style="flex: 1; min-width: 180px;" placeholder="🔍 搜尋訂單編號、會員或商品...">
+        </div>
+
+        <div id="audit-orders-summary" style="margin-bottom: 1rem; font-size: 1.15rem; font-weight: bold; color: var(--text-light);"></div>
+        <div id="audit-orders-list"></div>
+    </div>
+
+    <!-- 用戶管理與餘額調整頁面（僅 admin 可進入） -->
+    <div id="users-page" class="page">
+        <div class="page-top-bar">
+            <h1>👥 用戶與儲值管理</h1>
+            <button class="btn btn-secondary btn-small" id="back-from-users-btn">← 返回列表</button>
+        </div>
+
+        <div class="search-filter-bar">
+            <input type="text" id="user-search-input" class="form-control" style="flex: 1; min-width: 200px;" placeholder="🔍 搜尋用戶稱呼或賬號...">
+            <button class="btn btn-success btn-small" id="toggle-add-user-form-btn">➕ 新增用戶</button>
+        </div>
+
+        <div class="form-card" id="user-editor-card" style="display: none;">
+            <h2 id="user-editor-title" style="font-size: 1.45rem; margin-bottom: 1rem; color: var(--primary-color);">➕ 新增會員用戶</h2>
+            <input type="hidden" id="edit-user-original-account">
+
+            <div class="form-group">
+                <label for="manage-user-name">📛 稱呼（姓名） <span style="color: red;">*</span></label>
+                <input type="text" id="manage-user-name" class="form-control" placeholder="請輸入稱呼或姓名">
+            </div>
+
+            <div class="form-group">
+                <label for="manage-user-account">👤 登入賬號（限 8 位數） <span style="color: red;">*</span></label>
+                <input type="text" id="manage-user-account" class="form-control" placeholder="請輸入剛好 8 位數賬號">
+            </div>
+
+            <div class="form-group">
+                <label for="manage-user-password">🔒 登入密碼（限 8 位數） <span style="color: red;">*</span></label>
+                <input type="text" id="manage-user-password" class="form-control" placeholder="請輸入剛好 8 位數密碼">
+            </div>
+
+            <div class="form-group">
+                <label for="manage-user-balance">💰 儲值餘額（元）</label>
+                <input type="number" id="manage-user-balance" class="form-control" step="0.01" min="0" placeholder="0">
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" class="btn btn-secondary" id="cancel-user-editor-btn" style="flex: 1;">取消</button>
+                <button type="button" class="btn btn-primary" id="save-user-editor-btn" style="flex: 1;">✓ 儲存資料</button>
+            </div>
+        </div>
+
+        <div id="users-list-container"></div>
+    </div>
+
+    <!-- 【一般會員】我的訂單查詢頁面 -->
+    <div id="orders-page" class="page">
+        <div class="page-top-bar">
+            <h1>📋 我的訂單</h1>
+            <button class="btn btn-secondary btn-small" id="back-from-orders-btn">← 返回列表</button>
+        </div>
+
+        <div class="search-filter-bar">
+            <input type="text" id="order-search-input" class="form-control" style="flex: 1; min-width: 180px;" placeholder="🔍 搜尋訂單編號或商品...">
+        </div>
+
+        <div id="orders-summary-banner" style="margin-bottom: 1rem; font-size: 1.15rem; font-weight: bold; color: var(--text-light);"></div>
+        <div id="orders-list-container"></div>
+    </div>
+
+    <!-- 添加商品頁面（僅 admin 可進入） -->
+    <div id="add-product-page" class="page">
+        <h1 style="font-size: 2rem; margin-bottom: 1.25rem;">➕ 添加新商品</h1>
+
+        <div class="form-card">
+            <div class="form-group">
+                <label for="product-image-input">📷 商品圖片</label>
+                <div class="image-upload-box" id="image-upload-trigger">
+                    <div id="upload-placeholder">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🖼️</div>
+                        <div style="font-size: 1.15rem; font-weight: bold;">點擊選擇照片或拍照上傳</div>
+                        <div style="font-size: 0.95rem; color: var(--text-light); margin-top: 0.25rem;">支援 JPG、PNG 格式（系統會自動壓縮）</div>
+                    </div>
+                    <img id="image-preview" class="image-preview" alt="商品圖片預覽">
+                </div>
+                <input type="file" id="product-image-input" accept="image/*" style="display: none;">
+            </div>
+
+            <div class="form-group">
+                <label for="product-name">🏷️ 品名 <span style="color: red;">*</span></label>
+                <input type="text" id="product-name" class="form-control" placeholder="例如：有機高麗菜 / 富士蘋果">
+            </div>
+
+            <div class="form-group">
+                <label for="product-category">📂 分類 <span style="color: red;">*</span></label>
+                <select id="product-category" class="form-control">
+                    <option value="蔬菜">蔬菜</option>
+                    <option value="水果">水果</option>
+                    <option value="生鮮">生鮮</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="product-price">💰 價格（元，可輸入兩位小數） <span style="color: red;">*</span></label>
+                <input type="number" id="product-price" class="form-control" placeholder="例如：12.50 或 90" min="0" step="0.01" inputmode="decimal">
+            </div>
+
+            <div class="form-group">
+                <label for="product-description">📝 描述 <span style="color: red;">*</span></label>
+                <textarea id="product-description" class="form-control" rows="3" placeholder="例如：產地直送、新鮮清甜"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" id="cancel-add-product-btn" style="flex: 1;">← 取消返回</button>
+                <button class="btn btn-primary" id="save-product-btn" style="flex: 1;">✓ 確認上架</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 購物車頁面 -->
+    <div id="cart-page" class="page cart-page">
+        <h1 style="font-size: 2rem; margin-bottom: 1.5rem;">🛒 購物車</h1>
+        
+        <div id="cart-items-container" class="cart-items">
+            <div class="empty-cart">購物車是空的</div>
+        </div>
+        
+        <div class="order-summary">
+            <div class="summary-row">
+                <span>目前儲值餘額</span>
+                <span style="font-weight: bold; color: #2e7d32;" id="cart-wallet-balance">$0</span>
+            </div>
+            <div class="summary-row">
+                <span>商品小計</span>
+                <span id="subtotal">$0</span>
+            </div>
+            <div class="summary-row total">
+                <span>合計</span>
+                <span id="total-price">$0</span>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <button class="btn btn-secondary" id="continue-shopping-btn" style="flex: 1;">← 繼續選購</button>
+            <button class="btn btn-primary" id="proceed-checkout-btn" style="flex: 1;">進行結帳 →</button>
+        </div>
+    </div>
+
+    <!-- 結帳頁面（儲值扣款 / 現金支付） -->
+    <div id="checkout-page" class="page cart-page">
+        <h1 style="font-size: 2rem; margin-bottom: 1.5rem;">💳 結帳扣款</h1>
+        
+        <!-- 餘額不足提示框 -->
+        <div class="insufficient-alert-box" id="insufficient-balance-alert">
+            <div id="insufficient-balance-msg">⚠️ 您的儲值餘額不足以支付本次訂單！</div>
+            <button type="button" class="btn btn-wallet btn-small" id="go-recharge-from-checkout-btn" style="margin-top: 0.75rem; width: 100%;">
+                💳 立即前往充值（$20 / $50 / $100）
+            </button>
+        </div>
+
+        <div class="options-section">
+            <div class="options-title">💳 選擇付款方式</div>
+            <div class="payment-methods">
+                <div class="option-card selected" data-type="payment" data-value="wallet">
+                    <div class="payment-icon">💰</div>
+                    <div class="payment-method-name">儲值餘額扣款</div>
+                    <div style="font-size: 0.95rem; color: #2e7d32; margin-top: 0.25rem;" id="checkout-card-balance">餘額：$0</div>
+                </div>
+                <div class="option-card" data-type="payment" data-value="cash">
+                    <div class="payment-icon">💵</div>
+                    <div class="payment-method-name">到店現金支付</div>
+                    <div style="font-size: 0.95rem; color: var(--text-light); margin-top: 0.25rem;">現場付現</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="order-summary">
+            <div class="summary-row">
+                <span>目前儲值餘額</span>
+                <span style="font-weight: bold; color: #2e7d32;" id="checkout-wallet-balance">$0</span>
+            </div>
+            <div class="summary-row">
+                <span>商品小計</span>
+                <span id="checkout-subtotal">$0</span>
+            </div>
+            <div class="summary-row total">
+                <span>應付合計</span>
+                <span id="checkout-total">$0</span>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn btn-secondary" id="back-to-cart-btn" style="flex: 1;">← 返回</button>
+            <button class="btn btn-primary" id="confirm-order-btn" style="flex: 1;">確認訂單 →</button>
+        </div>
+    </div>
+
+    <!-- 訂單確認頁面 -->
+    <div id="confirmation-page" class="page confirmation-page">
+        <h1 class="confirmation-title">✓ 確認訂單</h1>
+        
+        <div id="confirmation-content"></div>
+        
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <button class="btn btn-secondary" id="back-checkout-btn" style="flex: 1;">← 返回修改</button>
+            <button class="btn btn-primary" id="place-order-btn" style="flex: 1;">📍 確認扣款下單</button>
+        </div>
+    </div>
+
+    <!-- 成功頁面 -->
+    <div id="success-page" class="page success-page">
+        <div class="success-icon">✅</div>
+        <h1>訂單已提交！</h1>
+        <p style="font-size: 1.25rem;" id="success-subtitle">已從您的儲值餘額成功扣款，等待管理員審核配貨</p>
+        
+        <div class="order-number" id="order-num">ORD00000000</div>
+        
+        <p style="font-size: 1.25rem; margin-top: 1rem; font-weight: bold; color: #2e7d32;" id="success-remaining-balance"></p>
+        
+        <div class="success-buttons">
+            <button class="btn btn-warning" id="view-my-orders-after-success-btn">📋 查看我的訂單</button>
+            <button class="btn btn-primary" id="new-order-btn">🔄 再買一次</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== 已清除所有原有預設商品，改為完全由管理員自行添加 =====
+        const DEFAULT_MENU_DATA = [];
+
+        const STORAGE_KEY = 'senior_ordering_custom_menu_v4';
+        const USERS_STORAGE_KEY = 'senior_ordering_users_v3';
+        const CURRENT_USER_KEY = 'senior_ordering_current_user_v3';
+        const ORDERS_STORAGE_KEY = 'senior_ordering_orders_v2';
+        const RECHARGE_RECORDS_KEY = 'senior_ordering_recharge_records_v1';
+        const TIER_QR_STORAGE_KEY = 'senior_ordering_wechat_tier_qrs_v1';
+
+        const DEFAULT_USERS = [
+            { account: 'admin', password: 'admin888', name: '管理員', balance: 500 }
+        ];
+
+        const CATEGORY_DEFAULT_EMOJI = {
+            '蔬菜': '🥬',
+            '水果': '🍎',
+            '生鮮': '🥩'
+        };
+
+        // ===== 應用程序狀態 =====
+        const APP = {
+            currentPage: 'login',
+            currentUser: null,
+            users: [],
+            orders: [],
+            rechargeRecords: [],
+            tierQrImages: { '20': '', '50': '', '100': '' },
+            selectedRechargeTier: 20,
+            uploadingTargetTier: 20,
+            rechargeProofBase64: null,
+            rechargeAuditFilter: 'pending',
+            orderAuditFilter: 'preparing',
+            selectedCategory: '全部',
+            menuItems: [],
+            cart: [],
+            paymentMethod: 'wallet',
+            orderNumber: null,
+            uploadedImageBase64: null,
+
+            isAdmin() {
+                return Boolean(this.currentUser && this.currentUser.account === 'admin');
+            },
+
+            getCurrentUserBalance() {
+                if (!this.currentUser) return 0;
+                const found = this.users.find(u => u.account === this.currentUser.account);
+                const bal = found ? Number(found.balance || 0) : Number(this.currentUser.balance || 0);
+                return Math.round(bal * 100) / 100;
+            },
+
+            adjustUserBalance(account, delta) {
+                const target = this.users.find(u => u.account === account);
+                if (!target) return false;
+                const currentCents = Math.round(Number(target.balance || 0) * 100);
+                const deltaCents = Math.round(Number(delta) * 100);
+                const nextCents = Math.max(0, currentCents + deltaCents);
+                target.balance = nextCents / 100;
+                this.saveUsersData();
+
+                if (this.currentUser && this.currentUser.account === account) {
+                    this.currentUser.balance = target.balance;
+                    try {
+                        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+                    } catch (e) {}
+                    this.updateUserDisplay();
+                }
+                return true;
+            },
+
+            formatPrice(amount) {
+                const rounded = Math.round(Number(amount) * 100) / 100;
+                return Number.isInteger(rounded) ? `$${rounded}` : `$${rounded.toFixed(2)}`;
+            },
+
+            getCartTotalAmount() {
+                const totalCents = this.cart.reduce((sum, item) => {
+                    return sum + Math.round(item.price * 100) * item.quantity;
+                }, 0);
+                return totalCents / 100;
+            },
+
+            formatDateTime(timestamp) {
+                const d = new Date(timestamp);
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            },
+
+            init() {
+                // 優先綁定所有按鈕與表單事件，避免任何外部元件錯誤阻斷操作
+                this.setupEventListeners();
+                this.setupAuthListeners();
+                this.setupManageListeners();
+                this.setupImageUpload();
+                this.setupRechargeListeners();
+
+                this.loadUsersData();
+                this.loadMenuData();
+                this.loadOrdersData();
+                this.loadRechargeData();
+                this.loadTierQrImages();
+                this.generateQRCode();
+
+                const urlParams = new URLSearchParams(window.location.search);
+                if (this.currentUser) {
+                    this.updateUserDisplay();
+                    if (urlParams.get('page') === 'qr') {
+                        this.showPage('qr');
+                    } else {
+                        this.showPage('menu');
+                    }
+                } else {
+                    this.showPage('login');
+                }
+            },
+
+            switchAuthMode(mode) {
+                const loginForm = document.getElementById('login-form');
+                const registerForm = document.getElementById('register-form');
+                document.querySelectorAll('.auth-tab').forEach(t => {
+                    if (t.dataset.authMode === mode) {
+                        t.classList.add('active');
+                    } else {
+                        t.classList.remove('active');
+                    }
+                });
+                if (mode === 'register') {
+                    if (loginForm) loginForm.style.display = 'none';
+                    if (registerForm) registerForm.style.display = 'block';
+                    this.clearRegisterHints();
+                } else {
+                    if (loginForm) loginForm.style.display = 'block';
+                    if (registerForm) registerForm.style.display = 'none';
+                }
+            },
+
+            loadTierQrImages() {
+                try {
+                    const saved = localStorage.getItem(TIER_QR_STORAGE_KEY);
+                    if (saved) {
+                        this.tierQrImages = { '20': '', '50': '', '100': '', ...JSON.parse(saved) };
+                    }
+                } catch (e) {
+                    this.tierQrImages = { '20': '', '50': '', '100': '' };
+                }
+            },
+
+            saveTierQrImages() {
+                try {
+                    localStorage.setItem(TIER_QR_STORAGE_KEY, JSON.stringify(this.tierQrImages));
+                } catch (e) {
+                    alert('圖片容量超過瀏覽器限制，請選擇較小的收款碼圖片');
+                }
+            },
+
+            loadRechargeData() {
+                try {
+                    const saved = localStorage.getItem(RECHARGE_RECORDS_KEY);
+                    this.rechargeRecords = saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    this.rechargeRecords = [];
+                }
+            },
+
+            saveRechargeData() {
+                try {
+                    localStorage.setItem(RECHARGE_RECORDS_KEY, JSON.stringify(this.rechargeRecords));
+                } catch (e) {
+                    alert('儲存空間已滿，建議清理舊紀錄');
+                }
+            },
+
+            setupRechargeListeners() {
+                document.querySelectorAll('.tier-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const tier = parseInt(btn.dataset.tier);
+                        this.selectRechargeTier(tier);
+                    });
+                });
+
+                const bindTrigger = document.getElementById('trigger-bind-tier-qr-btn');
+                const bindInput = document.getElementById('bind-tier-qr-input');
+                if (bindTrigger && bindInput) {
+                    bindTrigger.addEventListener('click', () => {
+                        if (!this.isAdmin()) {
+                            alert('權限不足：只有管理員（admin）可以上傳或更換專屬收款碼圖片！');
+                            return;
+                        }
+                        this.uploadingTargetTier = this.selectedRechargeTier;
+                        bindInput.click();
+                    });
+
+                    bindInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        this.processAndSaveSlotQrImage(file, String(this.uploadingTargetTier));
+                        bindInput.value = '';
+                    });
+                }
+
+                const proofTrigger = document.getElementById('recharge-proof-trigger');
+                const proofInput = document.getElementById('recharge-proof-input');
+                const proofPreview = document.getElementById('recharge-proof-preview');
+                const proofPlaceholder = document.getElementById('recharge-proof-placeholder');
+                const checkbox = document.getElementById('recharge-paid-checkbox');
+
+                if (proofTrigger && proofInput) {
+                    proofTrigger.addEventListener('click', () => proofInput.click());
+
+                    proofInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const maxWidth = 450;
+                                let width = img.width;
+                                let height = img.height;
+
+                                if (width > maxWidth) {
+                                    height = Math.round((height * maxWidth) / width);
+                                    width = maxWidth;
+                                }
+
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+
+                                this.rechargeProofBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                                proofPreview.src = this.rechargeProofBase64;
+                                proofPreview.style.display = 'inline-block';
+                                proofPlaceholder.style.display = 'none';
+                                this.updateRechargeSubmitBtnState();
+                            };
+                            img.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+
+                if (checkbox) {
+                    checkbox.addEventListener('change', () => {
+                        this.updateRechargeSubmitBtnState();
+                    });
+                }
+            },
+
+            processAndSaveSlotQrImage(file, tierKey) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以上傳或更換專屬收款碼圖片！');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxWidth = 550;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        this.tierQrImages[tierKey] = canvas.toDataURL('image/jpeg', 0.85);
+                        this.saveTierQrImages();
+
+                        if (this.currentPage === 'recharge') {
+                            this.selectRechargeTier(this.selectedRechargeTier);
+                        }
+                        if (this.currentPage === 'audit-recharge') {
+                            this.renderAuditRechargePage();
+                        }
+                        alert(`✅ 已成功設定【$${tierKey}】專屬微信收款碼！`);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            },
+
+            selectRechargeTier(tier) {
+                this.selectedRechargeTier = tier;
+                const tierStr = String(tier);
+                const isAdminUser = this.isAdmin();
+
+                document.querySelectorAll('.tier-btn').forEach(b => {
+                    if (parseInt(b.dataset.tier) === tier) {
+                        b.classList.add('selected');
+                    } else {
+                        b.classList.remove('selected');
+                    }
+                });
+
+                document.getElementById('selected-tier-badge').textContent = `$${tier}`;
+                document.getElementById('bind-btn-tier-text').textContent = `$${tier}`;
+                document.getElementById('proof-tier-text').textContent = `$${tier}`;
+                document.getElementById('checkbox-tier-text').textContent = `$${tier}`;
+
+                const adminBindBox = document.getElementById('admin-bind-qr-box');
+                if (adminBindBox) {
+                    adminBindBox.style.display = isAdminUser ? 'block' : 'none';
+                }
+
+                const qrImg = document.getElementById('tier-wechat-qr-img');
+                const qrCanvas = document.getElementById('tier-wechat-qr-canvas');
+                const hintEl = document.getElementById('tier-qr-status-hint');
+
+                const savedSlotImg = this.tierQrImages[tierStr];
+                if (savedSlotImg) {
+                    qrCanvas.style.display = 'none';
+                    qrImg.style.display = 'block';
+                    qrImg.src = savedSlotImg;
+                    if (hintEl && isAdminUser) {
+                        hintEl.textContent = `✅ 目前顯示的是已綁定的【$${tier}】固定金額微信收款碼`;
+                        hintEl.style.color = '#2e7d32';
+                    }
+                } else {
+                    qrImg.style.display = 'none';
+                    qrCanvas.style.display = 'block';
+                    this.drawTierWechatFallbackCanvas(qrCanvas, tier);
+                    if (hintEl && isAdminUser) {
+                        hintEl.textContent = `⚠️ 尚未綁定【$${tier}】專屬圖片（可點上方按鈕上傳該金額的固定收款碼）`;
+                        hintEl.style.color = '#d84315';
+                    }
+                }
+            },
+
+            drawTierWechatFallbackCanvas(canvas, tierAmount) {
+                try {
+                    const ctx = canvas.getContext('2d');
+                    const w = canvas.width;
+                    const h = canvas.height;
+
+                    ctx.fillStyle = '#07c160';
+                    ctx.fillRect(0, 0, w, h);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(0, h - 75);
+                    ctx.quadraticCurveTo(w / 2, h - 95, w, h - 75);
+                    ctx.lineTo(w, h);
+                    ctx.lineTo(0, h);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`推荐使用微信支付（$${tierAmount}）`, w / 2, 54);
+
+                    const cardX = 45;
+                    const cardY = 80;
+                    const cardW = w - 90;
+                    const cardH = 292;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.roundRect(cardX, cardY, cardW, cardH, 16);
+                    ctx.fill();
+
+                    if (typeof QRious !== 'undefined') {
+                        const tempQr = new QRious({
+                            size: 200,
+                            value: `wxp://f2f0-wechat-recharge-tier-${tierAmount}`,
+                            level: 'M'
+                        });
+                        ctx.drawImage(tempQr.canvas, (w - 200) / 2, cardY + 20);
+                    }
+
+                    ctx.fillStyle = '#e3f2fd';
+                    ctx.beginPath();
+                    ctx.roundRect(w / 2 - 22, cardY + 98, 44, 44, 8);
+                    ctx.fill();
+                    ctx.font = '26px sans-serif';
+                    ctx.fillText('👩🏻‍🎤', w / 2, cardY + 129);
+
+                    ctx.fillStyle = '#d84315';
+                    ctx.font = 'bold 20px sans-serif';
+                    ctx.fillText(`固定充值額度：$${tierAmount}`, w / 2, cardY + 245);
+
+                    ctx.fillStyle = '#333333';
+                    ctx.font = 'bold 17px sans-serif';
+                    ctx.fillText('风华绝代 (**桦)', w / 2, cardY + 272);
+
+                    ctx.fillStyle = '#07c160';
+                    ctx.beginPath();
+                    ctx.arc(w / 2 - 68, h - 36, 16, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(w / 2 - 76, h - 36);
+                    ctx.lineTo(w / 2 - 70, h - 30);
+                    ctx.lineTo(w / 2 - 59, h - 42);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#222222';
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.fillText('微信支付', w / 2 + 16, h - 27);
+                } catch (e) {}
+            },
+
+            updateRechargeSubmitBtnState() {
+                const checkbox = document.getElementById('recharge-paid-checkbox');
+                const submitBtn = document.getElementById('submit-recharge-request-btn');
+                if (!submitBtn) return;
+
+                const ready = Boolean(this.rechargeProofBase64) && Boolean(checkbox && checkbox.checked);
+                submitBtn.disabled = !ready;
+            },
+
+            resetRechargeForm() {
+                this.rechargeProofBase64 = null;
+                const fileInput = document.getElementById('recharge-proof-input');
+                const preview = document.getElementById('recharge-proof-preview');
+                const placeholder = document.getElementById('recharge-proof-placeholder');
+                const checkbox = document.getElementById('recharge-paid-checkbox');
+                const submitBtn = document.getElementById('submit-recharge-request-btn');
+
+                if (fileInput) fileInput.value = '';
+                if (preview) {
+                    preview.src = '';
+                    preview.style.display = 'none';
+                }
+                if (placeholder) placeholder.style.display = 'block';
+                if (checkbox) checkbox.checked = false;
+                if (submitBtn) submitBtn.disabled = true;
+            },
+
+            submitRechargeRequest() {
+                if (!this.currentUser) return;
+                if (!this.rechargeProofBase64) {
+                    alert('請先上傳微信付款成功截圖！');
+                    return;
+                }
+
+                const amount = this.selectedRechargeTier;
+                const newRecharge = {
+                    rechargeId: `RCH${Date.now().toString().slice(-8)}`,
+                    userAccount: this.currentUser.account,
+                    userName: this.currentUser.name,
+                    amount: amount,
+                    proofImage: this.rechargeProofBase64,
+                    status: 'pending',
+                    createdAt: this.formatDateTime(Date.now())
+                };
+
+                this.rechargeRecords.unshift(newRecharge);
+                this.saveRechargeData();
+                this.resetRechargeForm();
+                this.updateUserDisplay();
+
+                if (this.isAdmin()) {
+                    alert(`✅ 充值申請（${this.formatPrice(amount)}）已提交！\n單號：${newRecharge.rechargeId}\n請前往「💰 審核充值」核對確認後入帳。`);
+                    this.rechargeAuditFilter = 'pending';
+                    this.showPage('audit-recharge');
+                } else {
+                    alert(`✅ 充值申請（${this.formatPrice(amount)}）已提交！\n單號：${newRecharge.rechargeId}\n管理員審核確認收款後，儲值金額將正式到帳。`);
+                    this.showPage('my-recharge-records');
+                }
+            },
+
+            approveRechargeRecord(rechargeId) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員可以審核充值！');
+                    return;
+                }
+                const rec = this.rechargeRecords.find(r => r.rechargeId === rechargeId);
+                if (!rec || rec.status !== 'pending') return;
+
+                if (confirm(`確認已收到「${rec.userName}（${rec.userAccount}）」的微信轉帳 ${this.formatPrice(rec.amount)} 嗎？\n確認後將立即為該會員賬戶增加 ${this.formatPrice(rec.amount)} 儲值餘額！`)) {
+                    rec.status = 'approved';
+                    rec.auditedAt = this.formatDateTime(Date.now());
+                    this.adjustUserBalance(rec.userAccount, rec.amount);
+                    this.saveRechargeData();
+                    this.updateUserDisplay();
+                    this.renderAuditRechargePage();
+                }
+            },
+
+            rejectRechargeRecord(rechargeId) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員可以審核充值！');
+                    return;
+                }
+                const rec = this.rechargeRecords.find(r => r.rechargeId === rechargeId);
+                if (!rec || rec.status !== 'pending') return;
+
+                if (confirm(`確定要駁回「${rec.userName}」的這筆 ${this.formatPrice(rec.amount)} 充值申請嗎？（不會增加賬戶餘額）`)) {
+                    rec.status = 'rejected';
+                    rec.auditedAt = this.formatDateTime(Date.now());
+                    this.saveRechargeData();
+                    this.updateUserDisplay();
+                    this.renderAuditRechargePage();
+                }
+            },
+
+            renderAuditRechargePage() {
+                if (!this.isAdmin()) return;
+
+                ['20', '50', '100'].forEach(slot => {
+                    const imgEl = document.getElementById(`admin-slot-preview-${slot}`);
+                    if (imgEl) {
+                        if (this.tierQrImages[slot]) {
+                            imgEl.src = this.tierQrImages[slot];
+                        } else {
+                            const tempC = document.createElement('canvas');
+                            tempC.width = 240;
+                            tempC.height = 310;
+                            this.drawTierWechatFallbackCanvas(tempC, slot);
+                            imgEl.src = tempC.toDataURL();
+                        }
+                    }
+                });
+
+                document.querySelectorAll('#recharge-audit-tabs .audit-tab').forEach(tab => {
+                    if (tab.dataset.rechargeFilter === this.rechargeAuditFilter) {
+                        tab.classList.add('wechat-active');
+                    } else {
+                        tab.classList.remove('wechat-active');
+                    }
+                });
+
+                const keyword = (document.getElementById('audit-recharge-search-input')?.value || '').trim().toLowerCase();
+                const summaryEl = document.getElementById('audit-recharge-summary');
+                const listEl = document.getElementById('audit-recharge-list');
+
+                const totalPending = this.rechargeRecords.filter(r => r.status === 'pending').length;
+                const totalApproved = this.rechargeRecords.filter(r => r.status === 'approved').length;
+
+                let filtered = [...this.rechargeRecords];
+                if (this.rechargeAuditFilter !== 'ALL') {
+                    filtered = filtered.filter(r => r.status === this.rechargeAuditFilter);
+                }
+                if (keyword) {
+                    filtered = filtered.filter(r =>
+                        r.rechargeId.toLowerCase().includes(keyword) ||
+                        r.userName.toLowerCase().includes(keyword) ||
+                        r.userAccount.toLowerCase().includes(keyword)
+                    );
+                }
+
+                if (summaryEl) {
+                    summaryEl.textContent = `待審核：${totalPending} 筆 ｜ 已核准入帳：${totalApproved} 筆 ｜ 目前顯示：${filtered.length} 筆`;
+                }
+
+                if (!listEl) return;
+                if (filtered.length === 0) {
+                    listEl.innerHTML = '<div class="empty-cart">目前沒有符合條件的充值申請紀錄</div>';
+                    return;
+                }
+
+                listEl.innerHTML = filtered.map(rec => {
+                    let statusText = '⏳ 待審核入帳';
+                    let statusClass = 'preparing';
+                    if (rec.status === 'approved') {
+                        statusText = '✅ 已核准並到帳';
+                        statusClass = 'completed';
+                    } else if (rec.status === 'rejected') {
+                        statusText = '❌ 已駁回';
+                        statusClass = 'rejected';
+                    }
+
+                    const targetUser = this.users.find(u => u.account === rec.userAccount);
+                    const userCurrentBal = targetUser ? this.formatPrice(targetUser.balance || 0) : '$0';
+
+                    const adminActionHtml = (rec.status === 'pending')
+                        ? `<div style="display: flex; gap: 0.5rem;">
+                               <button class="btn btn-danger-light btn-small reject-recharge-btn" data-id="${rec.rechargeId}">✕ 駁回申請</button>
+                               <button class="btn btn-wechat btn-small approve-recharge-btn" data-id="${rec.rechargeId}">✓ 確認收款並入帳</button>
+                           </div>`
+                        : `<span style="font-size: 0.95rem; color: var(--text-light);">審核時間：${rec.auditedAt || rec.createdAt}</span>`;
+
+                    return `
+                        <div class="order-history-card recharge-record">
+                            <div class="order-card-header">
+                                <div>
+                                    <div class="order-id-text" style="color: #06964b;">充值單號：${rec.rechargeId}</div>
+                                    <div class="order-time-text">🕒 申請時間：${rec.createdAt}</div>
+                                </div>
+                                <span class="order-status-badge ${statusClass}">${statusText}</span>
+                            </div>
+
+                            <div class="order-buyer-tag">👤 申請會員：${rec.userName}（${rec.userAccount}）｜目前賬戶餘額：${userCurrentBal}</div>
+
+                            <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">
+                                申請充值金額：<span style="color: var(--accent-color); font-size: 1.45rem;">${this.formatPrice(rec.amount)}</span>
+                            </div>
+
+                            ${rec.proofImage ? `
+                                <div>
+                                    <span style="font-size: 0.95rem; color: var(--text-light);">付款截圖憑證（點擊圖片可放大檢視）：</span>
+                                    <img src="${rec.proofImage}" class="proof-thumb-preview zoomable-proof-img" alt="充值截圖">
+                                </div>
+                            ` : ''}
+
+                            <div class="order-card-footer">
+                                <span style="font-size: 1rem; color: var(--text-light);">方式：💬 微信固定碼充值</span>
+                                ${adminActionHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            renderMyRechargeRecordsPage() {
+                const summaryEl = document.getElementById('my-recharge-summary');
+                const listEl = document.getElementById('my-recharge-list');
+                const myRecords = this.rechargeRecords.filter(r => r.userAccount === this.currentUser?.account);
+
+                const pendingCount = myRecords.filter(r => r.status === 'pending').length;
+                if (summaryEl) {
+                    summaryEl.textContent = `共 ${myRecords.length} 筆充值申請 ｜ 待管理員審核：${pendingCount} 筆`;
+                }
+
+                if (!listEl) return;
+                if (myRecords.length === 0) {
+                    listEl.innerHTML = '<div class="empty-cart">您目前尚無充值紀錄</div>';
+                    return;
+                }
+
+                listEl.innerHTML = myRecords.map(rec => {
+                    let statusText = '⏳ 待管理員審核入帳';
+                    let statusClass = 'preparing';
+                    if (rec.status === 'approved') {
+                        statusText = '✅ 已審核通過並到帳';
+                        statusClass = 'completed';
+                    } else if (rec.status === 'rejected') {
+                        statusText = '❌ 未收到款項（已駁回）';
+                        statusClass = 'rejected';
+                    }
+
+                    return `
+                        <div class="order-history-card recharge-record">
+                            <div class="order-card-header">
+                                <div>
+                                    <div class="order-id-text" style="color: #06964b;">充值單號：${rec.rechargeId}</div>
+                                    <div class="order-time-text">🕒 ${rec.createdAt}</div>
+                                </div>
+                                <span class="order-status-badge ${statusClass}">${statusText}</span>
+                            </div>
+
+                            <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">
+                                充值金額：<span style="color: var(--accent-color); font-size: 1.45rem;">${this.formatPrice(rec.amount)}</span>
+                            </div>
+
+                            ${rec.proofImage ? `
+                                <div>
+                                    <span style="font-size: 0.95rem; color: var(--text-light);">已上傳付款截圖（點擊可放大）：</span>
+                                    <img src="${rec.proofImage}" class="proof-thumb-preview zoomable-proof-img" alt="充值截圖">
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            approveOrderRecord(orderNumber) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員可以審核訂單！');
+                    return;
+                }
+                const target = this.orders.find(o => o.orderNumber === orderNumber);
+                if (!target || target.status !== 'preparing') return;
+
+                if (confirm(`確認審核通過訂單「${target.orderNumber}」（會員：${target.userName}，金額：${this.formatPrice(target.totalAmount)}）並標記為已完成嗎？`)) {
+                    target.status = 'completed';
+                    target.auditedAt = this.formatDateTime(Date.now());
+                    this.saveOrdersData();
+                    this.updateUserDisplay();
+                    this.renderAuditOrdersPage();
+                }
+            },
+
+            cancelAndRefundOrderRecord(orderNumber) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員可以審核訂單！');
+                    return;
+                }
+                const target = this.orders.find(o => o.orderNumber === orderNumber);
+                if (!target || target.status !== 'preparing') return;
+
+                const isWalletPay = target.paymentMethod === 'wallet';
+                const confirmMsg = isWalletPay
+                    ? `確定要取消訂單「${target.orderNumber}」嗎？\n系統將自動把 ${this.formatPrice(target.totalAmount)} 退回給「${target.userName}（${target.userAccount}）」的儲值餘額！`
+                    : `確定要取消這筆到店現金訂單「${target.orderNumber}」嗎？`;
+
+                if (confirm(confirmMsg)) {
+                    target.status = 'cancelled';
+                    target.auditedAt = this.formatDateTime(Date.now());
+                    if (isWalletPay) {
+                        this.adjustUserBalance(target.userAccount, target.totalAmount);
+                    }
+                    this.saveOrdersData();
+                    this.updateUserDisplay();
+                    this.renderAuditOrdersPage();
+                }
+            },
+
+            prepareAndRenderAuditOrdersPage() {
+                if (!this.isAdmin()) return;
+
+                const userFilterEl = document.getElementById('audit-order-user-filter');
+                if (userFilterEl) {
+                    const currentSelected = userFilterEl.value || 'ALL';
+                    const uniqueAccounts = new Map();
+                    this.users.forEach(u => uniqueAccounts.set(u.account, u.name));
+                    this.orders.forEach(o => {
+                        if (!uniqueAccounts.has(o.userAccount)) {
+                            uniqueAccounts.set(o.userAccount, o.userName);
+                        }
+                    });
+
+                    let optionsHtml = `<option value="ALL">👥 顯示所有用戶訂單（全部）</option>`;
+                    uniqueAccounts.forEach((name, acc) => {
+                        optionsHtml += `<option value="${acc}">👤 ${name}（${acc}）</option>`;
+                    });
+                    userFilterEl.innerHTML = optionsHtml;
+                    userFilterEl.value = uniqueAccounts.has(currentSelected) ? currentSelected : 'ALL';
+                }
+
+                this.renderAuditOrdersPage();
+            },
+
+            renderAuditOrdersPage() {
+                if (!this.isAdmin()) return;
+
+                document.querySelectorAll('#orders-audit-tabs .audit-tab').forEach(tab => {
+                    if (tab.dataset.orderFilter === this.orderAuditFilter) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+
+                const container = document.getElementById('audit-orders-list');
+                const banner = document.getElementById('audit-orders-summary');
+                const keyword = (document.getElementById('audit-order-search-input')?.value || '').trim().toLowerCase();
+                const selectedAccountFilter = document.getElementById('audit-order-user-filter')?.value || 'ALL';
+
+                const pendingTotal = this.orders.filter(o => o.status === 'preparing').length;
+                const completedTotal = this.orders.filter(o => o.status === 'completed').length;
+
+                let visibleOrders = [...this.orders];
+                if (this.orderAuditFilter !== 'ALL') {
+                    visibleOrders = visibleOrders.filter(o => o.status === this.orderAuditFilter);
+                }
+                if (selectedAccountFilter !== 'ALL') {
+                    visibleOrders = visibleOrders.filter(o => o.userAccount === selectedAccountFilter);
+                }
+                if (keyword) {
+                    visibleOrders = visibleOrders.filter(o => {
+                        const matchOrderNum = o.orderNumber.toLowerCase().includes(keyword);
+                        const matchUser = (o.userName + o.userAccount).toLowerCase().includes(keyword);
+                        const matchItem = o.items.some(i => i.name.toLowerCase().includes(keyword));
+                        return matchOrderNum || matchUser || matchItem;
+                    });
+                }
+
+                if (banner) {
+                    const totalSpentCents = visibleOrders.reduce((sum, o) => sum + Math.round(o.totalAmount * 100), 0);
+                    banner.textContent = `待審核：${pendingTotal} 筆 ｜ 已審核完成：${completedTotal} 筆 ｜ 篩選累計：${this.formatPrice(totalSpentCents / 100)}`;
+                }
+
+                if (!container) return;
+                if (visibleOrders.length === 0) {
+                    container.innerHTML = '<div class="empty-cart">目前尚無符合條件的訂單紀錄</div>';
+                    return;
+                }
+
+                container.innerHTML = visibleOrders.map(order => {
+                    let statusBadgeHtml = '';
+                    if (order.status === 'completed') {
+                        statusBadgeHtml = `<span class="order-status-badge completed">✅ 已審核完成</span>`;
+                    } else if (order.status === 'cancelled') {
+                        statusBadgeHtml = `<span class="order-status-badge rejected">❌ 已取消退回</span>`;
+                    } else {
+                        statusBadgeHtml = `<span class="order-status-badge preparing">⏳ 待審核配貨</span>`;
+                    }
+
+                    const itemsHtml = order.items.map(item => {
+                        const sub = (Math.round(item.price * 100) * item.quantity) / 100;
+                        return `
+                            <div class="order-item-row">
+                                <span>${item.name} × ${item.quantity}</span>
+                                <span>${this.formatPrice(sub)}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    const auditActionButtons = (order.status === 'preparing')
+                        ? `<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                               <button class="btn btn-danger-light btn-small cancel-order-audit-btn" data-order-id="${order.orderNumber}">✕ 取消退回</button>
+                               <button class="btn btn-success btn-small approve-order-audit-btn" data-order-id="${order.orderNumber}">✓ 審核通過（完成）</button>
+                           </div>`
+                        : `<span style="font-size: 0.95rem; color: var(--text-light);">審核時間：${order.auditedAt || order.createdAt}</span>`;
+
+                    return `
+                        <div class="order-history-card">
+                            <div class="order-card-header">
+                                <div>
+                                    <div class="order-id-text">訂單編號：${order.orderNumber}</div>
+                                    <div class="order-time-text">🕒 下單時間：${order.createdAt}</div>
+                                </div>
+                                ${statusBadgeHtml}
+                            </div>
+
+                            <div class="order-buyer-tag">👤 下單會員：${order.userName}（${order.userAccount}）</div>
+
+                            <div class="order-items-list">
+                                ${itemsHtml}
+                            </div>
+
+                            <div class="order-card-footer">
+                                <div>
+                                    <div style="font-size: 1.05rem; color: var(--text-light);">支付方式：${this.getPaymentMethodName(order.paymentMethod)}</div>
+                                    <div class="order-total-highlight">訂單合計：${this.formatPrice(order.totalAmount)}</div>
+                                </div>
+                                ${auditActionButtons}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            loadUsersData() {
+                try {
+                    const savedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+                    if (savedUsers) {
+                        this.users = JSON.parse(savedUsers).map(u => ({
+                            balance: 0,
+                            ...u
+                        }));
+                        if (!this.users.some(u => u.account === 'admin')) {
+                            this.users.unshift(...DEFAULT_USERS);
+                            this.saveUsersData();
+                        }
+                    } else {
+                        this.users = [...DEFAULT_USERS];
+                        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(this.users));
+                    }
+
+                    const savedCurrent = localStorage.getItem(CURRENT_USER_KEY);
+                    if (savedCurrent) {
+                        const parsed = JSON.parse(savedCurrent);
+                        const latest = this.users.find(u => u.account === parsed.account);
+                        this.currentUser = latest
+                            ? { account: latest.account, name: latest.name, balance: latest.balance || 0 }
+                            : null;
+                    }
+                } catch (e) {
+                    this.users = [...DEFAULT_USERS];
+                    this.currentUser = null;
+                }
+            },
+
+            saveUsersData() {
+                try {
+                    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(this.users));
+                } catch (e) {
+                    console.error('儲存賬號資料失敗', e);
+                }
+            },
+
+            loadOrdersData() {
+                try {
+                    const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
+                    this.orders = savedOrders ? JSON.parse(savedOrders) : [];
+                } catch (e) {
+                    this.orders = [];
+                }
+            },
+
+            saveOrdersData() {
+                try {
+                    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(this.orders));
+                } catch (e) {
+                    alert('儲存空間已滿，建議清理舊訂單紀錄');
+                }
+            },
+
+            setCurrentUser(user) {
+                this.currentUser = user;
+                try {
+                    if (user) {
+                        const latestBal = this.getCurrentUserBalance();
+                        this.currentUser.balance = latestBal;
+                        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+                    } else {
+                        localStorage.removeItem(CURRENT_USER_KEY);
+                    }
+                } catch (e) {}
+                this.updateUserDisplay();
+            },
+
+            updateUserDisplay() {
+                const label = document.getElementById('current-user-label');
+                const userBar = document.getElementById('user-bar');
+                const balanceEl = document.getElementById('header-wallet-balance');
+
+                const auditRechargeBtn = document.getElementById('open-audit-recharge-btn');
+                const auditOrdersBtn = document.getElementById('open-audit-orders-btn');
+                const addProductBtn = document.getElementById('open-add-product-btn');
+                const usersManageBtn = document.getElementById('open-users-manage-btn');
+
+                const myRechargeBtn = document.getElementById('open-my-recharge-records-btn');
+                const myOrdersBtn = document.getElementById('open-my-orders-btn');
+
+                const adminPendingRechargeBadge = document.getElementById('admin-pending-recharge-badge');
+                const adminPendingOrdersBadge = document.getElementById('admin-pending-orders-badge');
+                const memberPendingRechargeBadge = document.getElementById('member-pending-recharge-badge');
+
+                const isAdminUser = this.isAdmin();
+
+                if (label && this.currentUser) {
+                    if (isAdminUser) {
+                        label.textContent = `🛠️ 管理員：${this.currentUser.name}（${this.currentUser.account}）`;
+                        if (userBar) userBar.classList.add('admin-mode');
+                    } else {
+                        label.textContent = `👤 您好，${this.currentUser.name}（${this.currentUser.account}）`;
+                        if (userBar) userBar.classList.remove('admin-mode');
+                    }
+                }
+
+                if (balanceEl) {
+                    balanceEl.textContent = this.formatPrice(this.getCurrentUserBalance());
+                }
+
+                if (auditRechargeBtn) auditRechargeBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
+                if (auditOrdersBtn) auditOrdersBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
+                if (addProductBtn) addProductBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
+                if (usersManageBtn) usersManageBtn.style.display = isAdminUser ? 'inline-flex' : 'none';
+
+                if (myRechargeBtn) myRechargeBtn.style.display = isAdminUser ? 'none' : 'inline-flex';
+                if (myOrdersBtn) myOrdersBtn.style.display = isAdminUser ? 'none' : 'inline-flex';
+
+                if (adminPendingRechargeBadge) {
+                    const pendingRchCount = this.rechargeRecords.filter(r => r.status === 'pending').length;
+                    adminPendingRechargeBadge.style.display = pendingRchCount > 0 ? 'inline-block' : 'none';
+                    adminPendingRechargeBadge.textContent = pendingRchCount;
+                }
+
+                if (adminPendingOrdersBadge) {
+                    const pendingOrdCount = this.orders.filter(o => o.status === 'preparing').length;
+                    adminPendingOrdersBadge.style.display = pendingOrdCount > 0 ? 'inline-block' : 'none';
+                    adminPendingOrdersBadge.textContent = pendingOrdCount;
+                }
+
+                if (memberPendingRechargeBadge && !isAdminUser) {
+                    const myPendingCount = this.rechargeRecords.filter(
+                        r => r.userAccount === this.currentUser?.account && r.status === 'pending'
+                    ).length;
+                    memberPendingRechargeBadge.style.display = myPendingCount > 0 ? 'inline-block' : 'none';
+                    memberPendingRechargeBadge.textContent = myPendingCount;
+                }
+            },
+
+            // 註冊表單即時驗證邏輯（限制賬號與密碼必須剛好 8 位數）
+            validateRegisterField(fieldType, forceShowEmpty = false) {
+                const accInput = document.getElementById('reg-account');
+                const accHint = document.getElementById('reg-account-hint');
+                const pwdInput = document.getElementById('reg-password');
+                const pwdHint = document.getElementById('reg-password-hint');
+                const confirmInput = document.getElementById('reg-password-confirm');
+                const confirmHint = document.getElementById('reg-password-confirm-hint');
+
+                const setHintState = (input, hintEl, type, msg) => {
+                    if (!input || !hintEl) return;
+                    input.classList.remove('input-error', 'input-success');
+                    hintEl.classList.remove('error', 'success');
+                    if (type === 'error') {
+                        input.classList.add('input-error');
+                        hintEl.classList.add('error');
+                    } else if (type === 'success') {
+                        input.classList.add('input-success');
+                        hintEl.classList.add('success');
+                    }
+                    hintEl.textContent = msg;
+                };
+
+                if (fieldType === 'account' || fieldType === 'all') {
+                    const val = accInput ? accInput.value : '';
+                    if (!val && !forceShowEmpty) {
+                        setHintState(accInput, accHint, '', '');
+                    } else if (val.includes(' ')) {
+                        setHintState(accInput, accHint, 'error', '❌ 賬號不可包含空格，請輸入剛好 8 位數');
+                    } else if (val.length !== 8) {
+                        const diffText = val.length < 8
+                            ? `還差 ${8 - val.length} 位`
+                            : `多了 ${val.length - 8} 位`;
+                        setHintState(accInput, accHint, 'error', `❌ 賬號只能設置 8 位數（目前 ${val.length} 位，${diffText}）`);
+                    } else if (this.users.some(u => u.account === val)) {
+                        setHintState(accInput, accHint, 'error', '❌ 此 8 位數賬號已被註冊，請換一個賬號');
+                    } else {
+                        setHintState(accInput, accHint, 'success', '✅ 賬號格式正確（剛好 8 位數）');
+                    }
+                }
+
+                if (fieldType === 'password' || fieldType === 'all') {
+                    const val = pwdInput ? pwdInput.value : '';
+                    if (!val && !forceShowEmpty) {
+                        setHintState(pwdInput, pwdHint, '', '');
+                    } else if (val.includes(' ')) {
+                        setHintState(pwdInput, pwdHint, 'error', '❌ 密碼不可包含空格，請輸入剛好 8 位數');
+                    } else if (val.length !== 8) {
+                        const diffText = val.length < 8
+                            ? `還差 ${8 - val.length} 位`
+                            : `多了 ${val.length - 8} 位`;
+                        setHintState(pwdInput, pwdHint, 'error', `❌ 密碼只能設置 8 位數（目前 ${val.length} 位，${diffText}）`);
+                    } else {
+                        setHintState(pwdInput, pwdHint, 'success', '✅ 密碼格式正確（剛好 8 位數）');
+                    }
+                }
+
+                if (fieldType === 'confirm' || fieldType === 'password' || fieldType === 'all') {
+                    const pwdVal = pwdInput ? pwdInput.value : '';
+                    const confirmVal = confirmInput ? confirmInput.value : '';
+                    if (!confirmVal && !forceShowEmpty) {
+                        setHintState(confirmInput, confirmHint, '', '');
+                    } else if (confirmVal.length !== 8) {
+                        const diffText = confirmVal.length < 8
+                            ? `還差 ${8 - confirmVal.length} 位`
+                            : `多了 ${confirmVal.length - 8} 位`;
+                        setHintState(confirmInput, confirmHint, 'error', `❌ 確認密碼也只能設置 8 位數（目前 ${confirmVal.length} 位，${diffText}）`);
+                    } else if (confirmVal !== pwdVal) {
+                        setHintState(confirmInput, confirmHint, 'error', '❌ 兩次輸入的 8 位數密碼不一致，請重新檢查');
+                    } else {
+                        setHintState(confirmInput, confirmHint, 'success', '✅ 兩次輸入的 8 位數密碼一致');
+                    }
+                }
+            },
+
+            clearRegisterHints() {
+                ['reg-account', 'reg-password', 'reg-password-confirm'].forEach(id => {
+                    const input = document.getElementById(id);
+                    const hint = document.getElementById(`${id}-hint`);
+                    if (input) input.classList.remove('input-error', 'input-success');
+                    if (hint) {
+                        hint.classList.remove('error', 'success');
+                        hint.textContent = '';
+                    }
+                });
+            },
+
+            handleLoginSubmit() {
+                const account = (document.getElementById('login-account')?.value || '').trim();
+                const password = (document.getElementById('login-password')?.value || '').trim();
+
+                if (!account) {
+                    alert('請輸入會員賬號');
+                    return;
+                }
+                if (!password) {
+                    alert('請輸入登入密碼');
+                    return;
+                }
+
+                const matchedUser = this.users.find(
+                    u => u.account === account && u.password === password
+                );
+
+                if (!matchedUser) {
+                    alert('賬號或密碼錯誤，請重新確認！\n（若尚未註冊，可點選上方「註冊新賬號」）');
+                    return;
+                }
+
+                this.setCurrentUser({
+                    account: matchedUser.account,
+                    name: matchedUser.name,
+                    balance: matchedUser.balance || 0
+                });
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) loginForm.reset();
+                this.showPage('menu');
+            },
+
+            handleRegisterSubmit() {
+                const nameInput = document.getElementById('reg-name');
+                const regAccountInput = document.getElementById('reg-account');
+                const regPasswordInput = document.getElementById('reg-password');
+                const regConfirmInput = document.getElementById('reg-password-confirm');
+
+                const name = (nameInput?.value || '').trim();
+                const account = regAccountInput ? regAccountInput.value : '';
+                const password = regPasswordInput ? regPasswordInput.value : '';
+                const confirmPwd = regConfirmInput ? regConfirmInput.value : '';
+
+                this.validateRegisterField('all', true);
+
+                if (!name) {
+                    alert('請輸入您的稱呼（姓名）');
+                    if (nameInput) nameInput.focus();
+                    return;
+                }
+                if (account.includes(' ') || account.length !== 8) {
+                    alert(`賬號只能設置 8 位數（不能多也不能少），目前為 ${account.length} 位，請修改後再送出！`);
+                    if (regAccountInput) regAccountInput.focus();
+                    return;
+                }
+                if (this.users.some(u => u.account === account)) {
+                    alert('此 8 位數賬號已被註冊，請換一個賬號或直接登入');
+                    if (regAccountInput) regAccountInput.focus();
+                    return;
+                }
+                if (password.includes(' ') || password.length !== 8) {
+                    alert(`密碼只能設置 8 位數（不能多也不能少），目前為 ${password.length} 位，請修改後再送出！`);
+                    if (regPasswordInput) regPasswordInput.focus();
+                    return;
+                }
+                if (password !== confirmPwd) {
+                    alert('兩次輸入的 8 位數密碼不一致，請重新確認');
+                    if (regConfirmInput) regConfirmInput.focus();
+                    return;
+                }
+
+                const newUser = { account, password, name, balance: 0 };
+                this.users.push(newUser);
+                this.saveUsersData();
+                this.setCurrentUser({ account: newUser.account, name: newUser.name, balance: 0 });
+                const registerForm = document.getElementById('register-form');
+                if (registerForm) registerForm.reset();
+                this.clearRegisterHints();
+                alert(`註冊成功！歡迎您，${name}\n您可以點擊「💳 賬戶充值」進行儲值，經管理員審核通過後即可扣款下單。`);
+                this.showPage('menu');
+            },
+
+            setupAuthListeners() {
+                const loginForm = document.getElementById('login-form');
+                const registerForm = document.getElementById('register-form');
+
+                document.querySelectorAll('.auth-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.switchAuthMode(tab.dataset.authMode);
+                    });
+                });
+
+                document.querySelectorAll('.toggle-pwd-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const input = document.getElementById(btn.dataset.target);
+                        if (!input) return;
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            btn.textContent = '隱藏';
+                        } else {
+                            input.type = 'password';
+                            btn.textContent = '顯示';
+                        }
+                    });
+                });
+
+                const regAccountInput = document.getElementById('reg-account');
+                const regPasswordInput = document.getElementById('reg-password');
+                const regConfirmInput = document.getElementById('reg-password-confirm');
+
+                if (regAccountInput) {
+                    regAccountInput.addEventListener('input', () => this.validateRegisterField('account', false));
+                    regAccountInput.addEventListener('blur', () => this.validateRegisterField('account', true));
+                }
+                if (regPasswordInput) {
+                    regPasswordInput.addEventListener('input', () => this.validateRegisterField('password', false));
+                    regPasswordInput.addEventListener('blur', () => this.validateRegisterField('password', true));
+                }
+                if (regConfirmInput) {
+                    regConfirmInput.addEventListener('input', () => this.validateRegisterField('confirm', false));
+                    regConfirmInput.addEventListener('blur', () => this.validateRegisterField('confirm', true));
+                }
+
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.handleLoginSubmit();
+                    });
+                }
+
+                if (registerForm) {
+                    registerForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.handleRegisterSubmit();
+                    });
+                }
+            },
+
+            setupManageListeners() {
+                const userSearchInput = document.getElementById('user-search-input');
+                if (userSearchInput) {
+                    userSearchInput.addEventListener('input', () => this.renderUsersPage());
+                }
+
+                const orderSearchInput = document.getElementById('order-search-input');
+                if (orderSearchInput) {
+                    orderSearchInput.addEventListener('input', () => this.renderMyOrdersPage());
+                }
+
+                const auditRechargeSearch = document.getElementById('audit-recharge-search-input');
+                if (auditRechargeSearch) {
+                    auditRechargeSearch.addEventListener('input', () => this.renderAuditRechargePage());
+                }
+
+                const auditOrderSearch = document.getElementById('audit-order-search-input');
+                if (auditOrderSearch) {
+                    auditOrderSearch.addEventListener('input', () => this.renderAuditOrdersPage());
+                }
+
+                const auditOrderUserFilter = document.getElementById('audit-order-user-filter');
+                if (auditOrderUserFilter) {
+                    auditOrderUserFilter.addEventListener('change', () => this.renderAuditOrdersPage());
+                }
+            },
+
+            openAddUserEditor() {
+                const card = document.getElementById('user-editor-card');
+                document.getElementById('user-editor-title').textContent = '➕ 新增會員用戶';
+                document.getElementById('edit-user-original-account').value = '';
+                document.getElementById('manage-user-name').value = '';
+                const accInput = document.getElementById('manage-user-account');
+                accInput.value = '';
+                accInput.disabled = false;
+                document.getElementById('manage-user-password').value = '';
+                document.getElementById('manage-user-balance').value = '0';
+                card.style.display = 'block';
+                card.scrollIntoView({ behavior: 'smooth' });
+            },
+
+            openEditUserEditor(account) {
+                const target = this.users.find(u => u.account === account);
+                if (!target) return;
+
+                const card = document.getElementById('user-editor-card');
+                document.getElementById('user-editor-title').textContent = `✏️ 編輯用戶與儲值餘額（${target.account}）`;
+                document.getElementById('edit-user-original-account').value = target.account;
+                document.getElementById('manage-user-name').value = target.name;
+                const accInput = document.getElementById('manage-user-account');
+                accInput.value = target.account;
+                accInput.disabled = (target.account === 'admin');
+                document.getElementById('manage-user-password').value = target.password;
+                document.getElementById('manage-user-balance').value = String(target.balance || 0);
+                card.style.display = 'block';
+                card.scrollIntoView({ behavior: 'smooth' });
+            },
+
+            saveUserEditor() {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以管理用戶！');
+                    return;
+                }
+
+                const originalAccount = document.getElementById('edit-user-original-account').value;
+                const name = document.getElementById('manage-user-name').value.trim();
+                const account = document.getElementById('manage-user-account').value;
+                const password = document.getElementById('manage-user-password').value;
+                const balanceVal = parseFloat(document.getElementById('manage-user-balance').value || '0');
+
+                if (!name) {
+                    alert('請輸入用戶「稱呼（姓名）」');
+                    return;
+                }
+                if (account !== 'admin' && (account.includes(' ') || account.length !== 8)) {
+                    alert(`會員賬號只能設置 8 位數（不能多也不能少），目前為 ${account.length} 位！`);
+                    return;
+                }
+                if (password.includes(' ') || password.length !== 8) {
+                    alert(`登入密碼只能設置 8 位數（不能多也不能少），目前為 ${password.length} 位！`);
+                    return;
+                }
+                if (isNaN(balanceVal) || balanceVal < 0) {
+                    alert('儲值餘額不可為負數');
+                    return;
+                }
+
+                const cleanBalance = Math.round(balanceVal * 100) / 100;
+
+                if (!originalAccount) {
+                    if (this.users.some(u => u.account === account)) {
+                        alert('此 8 位數賬號已存在，請使用其他賬號名稱！');
+                        return;
+                    }
+                    this.users.push({ account, password, name, balance: cleanBalance });
+                    alert(`已成功新增用戶「${name}（${account}）」，初始餘額 ${this.formatPrice(cleanBalance)}！`);
+                } else {
+                    if (account !== originalAccount && this.users.some(u => u.account === account)) {
+                        alert('新賬號名稱與現有會員重複，請換一個！');
+                        return;
+                    }
+                    const target = this.users.find(u => u.account === originalAccount);
+                    if (target) {
+                        target.name = name;
+                        target.account = account;
+                        target.password = password;
+                        target.balance = cleanBalance;
+
+                        if (this.currentUser && this.currentUser.account === originalAccount) {
+                            this.setCurrentUser({ account: target.account, name: target.name, balance: cleanBalance });
+                        }
+                        alert(`已成功更新用戶「${name}」的資料與餘額！`);
+                    }
+                }
+
+                this.saveUsersData();
+                document.getElementById('user-editor-card').style.display = 'none';
+                this.renderUsersPage();
+            },
+
+            deleteUserAccount(account) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以刪除用戶！');
+                    return;
+                }
+                if (account === 'admin') {
+                    alert('系統預設管理員（admin）賬號不可刪除！');
+                    return;
+                }
+
+                const target = this.users.find(u => u.account === account);
+                if (!target) return;
+
+                if (confirm(`確定要刪除會員「${target.name}（${target.account}）」嗎？`)) {
+                    this.users = this.users.filter(u => u.account !== account);
+                    this.saveUsersData();
+                    this.renderUsersPage();
+                }
+            },
+
+            renderUsersPage() {
+                const container = document.getElementById('users-list-container');
+                if (!container) return;
+
+                const keyword = (document.getElementById('user-search-input')?.value || '').trim().toLowerCase();
+                const filteredUsers = this.users.filter(u => {
+                    if (!keyword) return true;
+                    return u.name.toLowerCase().includes(keyword) || u.account.toLowerCase().includes(keyword);
+                });
+
+                if (filteredUsers.length === 0) {
+                    container.innerHTML = '<div class="empty-cart">找不到符合條件的會員賬號</div>';
+                    return;
+                }
+
+                container.innerHTML = filteredUsers.map(u => {
+                    const isAdminAcc = u.account === 'admin';
+                    return `
+                        <div class="user-card ${isAdminAcc ? 'is-admin-card' : ''}">
+                            <div class="user-card-header">
+                                <span class="user-card-title">${isAdminAcc ? '🛠️' : '👤'} ${u.name}</span>
+                                <span class="role-badge ${isAdminAcc ? 'admin' : 'member'}">
+                                    ${isAdminAcc ? '系統管理員' : '儲值會員'}
+                                </span>
+                            </div>
+                            <div class="user-card-meta">
+                                <div><strong>登入賬號：</strong>${u.account}</div>
+                                <div><strong>登入密碼：</strong>${u.password}</div>
+                                <div><strong>儲值餘額：</strong><span style="color: #d84315; font-weight: bold; font-size: 1.3rem;">${this.formatPrice(u.balance || 0)}</span></div>
+                            </div>
+                            <div class="user-card-actions">
+                                <button class="btn btn-info btn-small edit-user-btn" data-account="${u.account}">✏️ 修改資料 / 調整餘額</button>
+                                ${!isAdminAcc
+                                    ? `<button class="btn btn-danger-light btn-small delete-user-btn" data-account="${u.account}">🗑️ 刪除用戶</button>`
+                                    : ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            renderMyOrdersPage() {
+                const container = document.getElementById('orders-list-container');
+                const banner = document.getElementById('orders-summary-banner');
+                if (!container) return;
+
+                const keyword = (document.getElementById('order-search-input')?.value || '').trim().toLowerCase();
+                let visibleOrders = this.orders.filter(o => o.userAccount === this.currentUser?.account);
+
+                if (keyword) {
+                    visibleOrders = visibleOrders.filter(o => {
+                        const matchOrderNum = o.orderNumber.toLowerCase().includes(keyword);
+                        const matchItem = o.items.some(i => i.name.toLowerCase().includes(keyword));
+                        return matchOrderNum || matchItem;
+                    });
+                }
+
+                if (banner) {
+                    const validOrders = visibleOrders.filter(o => o.status !== 'cancelled');
+                    const totalSpentCents = validOrders.reduce((sum, o) => sum + Math.round(o.totalAmount * 100), 0);
+                    banner.textContent = `共 ${visibleOrders.length} 筆訂單 ｜ 有效累計消費：${this.formatPrice(totalSpentCents / 100)}`;
+                }
+
+                if (visibleOrders.length === 0) {
+                    container.innerHTML = '<div class="empty-cart">目前尚無符合的訂單紀錄</div>';
+                    return;
+                }
+
+                container.innerHTML = visibleOrders.map(order => {
+                    let statusBadgeHtml = '';
+                    if (order.status === 'completed') {
+                        statusBadgeHtml = `<span class="order-status-badge completed">✅ 已審核完成</span>`;
+                    } else if (order.status === 'cancelled') {
+                        statusBadgeHtml = `<span class="order-status-badge rejected">❌ 已取消退回</span>`;
+                    } else {
+                        statusBadgeHtml = `<span class="order-status-badge preparing">⏳ 待管理員審核配貨</span>`;
+                    }
+
+                    const itemsHtml = order.items.map(item => {
+                        const sub = (Math.round(item.price * 100) * item.quantity) / 100;
+                        return `
+                            <div class="order-item-row">
+                                <span>${item.name} × ${item.quantity}</span>
+                                <span>${this.formatPrice(sub)}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="order-history-card">
+                            <div class="order-card-header">
+                                <div>
+                                    <div class="order-id-text">單號：${order.orderNumber}</div>
+                                    <div class="order-time-text">🕒 ${order.createdAt}</div>
+                                </div>
+                                ${statusBadgeHtml}
+                            </div>
+
+                            <div class="order-items-list">
+                                ${itemsHtml}
+                            </div>
+
+                            <div class="order-card-footer">
+                                <div>
+                                    <div style="font-size: 1.05rem; color: var(--text-light);">支付：${this.getPaymentMethodName(order.paymentMethod)}</div>
+                                    <div class="order-total-highlight">實付合計：${this.formatPrice(order.totalAmount)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            handleLogout() {
+                if (confirm('確定要登出目前賬號嗎？')) {
+                    this.resetOrder();
+                    this.setCurrentUser(null);
+                    this.showPage('login');
+                }
+            },
+
+            loadMenuData() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        this.menuItems = JSON.parse(saved);
+                    } else {
+                        const legacySaved = localStorage.getItem('senior_ordering_custom_menu_v3');
+                        if (legacySaved) {
+                            const parsedLegacy = JSON.parse(legacySaved);
+                            this.menuItems = Array.isArray(parsedLegacy)
+                                ? parsedLegacy.filter(item => item && item.isCustom === true)
+                                : [];
+                        } else {
+                            this.menuItems = [...DEFAULT_MENU_DATA];
+                        }
+                        this.saveMenuData();
+                    }
+                } catch (e) {
+                    this.menuItems = [...DEFAULT_MENU_DATA];
+                }
+            },
+
+            saveMenuData() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.menuItems));
+                } catch (e) {
+                    alert('圖片容量超過瀏覽器儲存上限，請選擇較小的圖片！');
+                }
+            },
+
+            generateQRCode() {
+                try {
+                    const qrEl = document.getElementById('qr-code');
+                    if (!qrEl || typeof QRious === 'undefined') return;
+                    const currentUrl = window.location.href.split('?')[0];
+                    const orderingPageUrl = `${currentUrl}?page=menu`;
+                    new QRious({
+                        element: qrEl,
+                        size: 280,
+                        value: orderingPageUrl,
+                        level: 'M'
+                    });
+                } catch (e) {
+                    console.warn('QR Code 生成略過：', e);
+                }
+            },
+
+            setupImageUpload() {
+                const trigger = document.getElementById('image-upload-trigger');
+                const fileInput = document.getElementById('product-image-input');
+                const preview = document.getElementById('image-preview');
+                const placeholder = document.getElementById('upload-placeholder');
+
+                if (!trigger || !fileInput) return;
+
+                trigger.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxWidth = 500;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > maxWidth) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            this.uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                            preview.src = this.uploadedImageBase64;
+                            preview.style.display = 'inline-block';
+                            placeholder.style.display = 'none';
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            },
+
+            resetAddProductForm() {
+                document.getElementById('product-name').value = '';
+                document.getElementById('product-category').value = '蔬菜';
+                document.getElementById('product-price').value = '';
+                document.getElementById('product-description').value = '';
+                document.getElementById('product-image-input').value = '';
+                document.getElementById('image-preview').style.display = 'none';
+                document.getElementById('upload-placeholder').style.display = 'block';
+                this.uploadedImageBase64 = null;
+            },
+
+            handleSaveNewProduct() {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以添加商品！');
+                    this.showPage('menu');
+                    return;
+                }
+
+                const name = document.getElementById('product-name').value.trim();
+                const category = document.getElementById('product-category').value;
+                const priceVal = document.getElementById('product-price').value.trim();
+                const description = document.getElementById('product-description').value.trim();
+
+                if (!name) {
+                    alert('請輸入商品「品名」');
+                    return;
+                }
+                const parsedPrice = parseFloat(priceVal);
+                if (!priceVal || isNaN(parsedPrice) || parsedPrice < 0) {
+                    alert('請輸入有效的商品「價格」');
+                    return;
+                }
+                if (!/^\d+(\.\d{1,2})?$/.test(priceVal)) {
+                    alert('價格最多只能輸入兩位小數（例如：12.50）');
+                    return;
+                }
+                if (!description) {
+                    alert('請輸入商品「描述」');
+                    return;
+                }
+
+                const newProduct = {
+                    id: Date.now(),
+                    name: name,
+                    category: category,
+                    emoji: CATEGORY_DEFAULT_EMOJI[category] || '🥬',
+                    image: this.uploadedImageBase64,
+                    description: description,
+                    price: Math.round(parsedPrice * 100) / 100,
+                    isCustom: true
+                };
+
+                this.menuItems.unshift(newProduct);
+                this.saveMenuData();
+                this.resetAddProductForm();
+                this.setCategoryFilter(category);
+                alert(`「${name}」已成功上架到【${category}】分類！`);
+                this.showPage('menu');
+            },
+
+            handleEditPrice(itemId) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以修改價格！');
+                    return;
+                }
+
+                const target = this.menuItems.find(m => m.id === itemId);
+                if (!target) return;
+
+                const input = prompt(
+                    `請輸入「${target.name}」的新價格（目前價格：${this.formatPrice(target.price)}，最多兩位小數）：`,
+                    String(target.price)
+                );
+
+                if (input === null) return;
+
+                const trimmed = input.trim();
+                const parsedPrice = parseFloat(trimmed);
+
+                if (!trimmed || isNaN(parsedPrice) || parsedPrice < 0) {
+                    alert('請輸入有效的數字價格！');
+                    return;
+                }
+                if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+                    alert('價格最多只能輸入兩位小數（例如：12.50）！');
+                    return;
+                }
+
+                const newPrice = Math.round(parsedPrice * 100) / 100;
+                target.price = newPrice;
+
+                const cartItem = this.cart.find(c => c.id === itemId);
+                if (cartItem) {
+                    cartItem.price = newPrice;
+                }
+
+                this.saveMenuData();
+                this.updateCart();
+                this.renderMenu();
+                alert(`「${target.name}」價格已更新為 ${this.formatPrice(newPrice)}！`);
+            },
+
+            setCategoryFilter(category) {
+                this.selectedCategory = category;
+                document.querySelectorAll('.category-tab').forEach(tab => {
+                    if (tab.dataset.category === category) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+                if (this.currentPage === 'menu') {
+                    this.renderMenu();
+                }
+            },
+
+            deleteCustomProduct(itemId) {
+                if (!this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以刪除商品！');
+                    return;
+                }
+
+                const target = this.menuItems.find(m => m.id === itemId);
+                if (!target) return;
+
+                if (confirm(`確定要刪除「${target.name}」嗎？`)) {
+                    this.menuItems = this.menuItems.filter(m => m.id !== itemId);
+                    this.cart = this.cart.filter(c => c.id !== itemId);
+                    this.saveMenuData();
+                    this.updateCart();
+                    this.renderMenu();
+                }
+            },
+
+            setupEventListeners() {
+                document.addEventListener('click', (e) => {
+                    // 登入 / 註冊分頁切換（事件委派備援）
+                    const authTab = e.target.closest('.auth-tab');
+                    if (authTab) {
+                        this.switchAuthMode(authTab.dataset.authMode);
+                    }
+
+                    if (e.target.classList.contains('zoomable-proof-img')) {
+                        const lightbox = document.getElementById('image-lightbox');
+                        const lightboxImg = document.getElementById('lightbox-img');
+                        if (lightbox && lightboxImg) {
+                            lightboxImg.src = e.target.src;
+                            lightbox.classList.add('active');
+                        }
+                    }
+
+                    if (e.target.id === 'close-lightbox-btn' || e.target.id === 'image-lightbox') {
+                        const lightbox = document.getElementById('image-lightbox');
+                        if (lightbox) lightbox.classList.remove('active');
+                    }
+
+                    if (e.target.id === 'logout-btn') {
+                        this.handleLogout();
+                    }
+
+                    if (e.target.id === 'open-recharge-btn' || e.target.id === 'go-recharge-from-checkout-btn') {
+                        this.resetRechargeForm();
+                        this.showPage('recharge');
+                    }
+
+                    if (e.target.id === 'back-from-recharge-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.id === 'submit-recharge-request-btn') {
+                        this.submitRechargeRequest();
+                    }
+
+                    if (e.target.closest('#open-audit-recharge-btn')) {
+                        if (!this.isAdmin()) {
+                            alert('權限不足：只有管理員（admin）可以審核充值！');
+                            return;
+                        }
+                        this.rechargeAuditFilter = 'pending';
+                        document.getElementById('audit-recharge-search-input').value = '';
+                        this.showPage('audit-recharge');
+                    }
+
+                    if (e.target.id === 'back-from-audit-recharge-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.closest('#recharge-audit-tabs .audit-tab')) {
+                        this.rechargeAuditFilter = e.target.closest('.audit-tab').dataset.rechargeFilter;
+                        this.renderAuditRechargePage();
+                    }
+
+                    if (e.target.closest('#open-my-recharge-records-btn')) {
+                        this.showPage('my-recharge-records');
+                    }
+
+                    if (e.target.id === 'back-from-my-recharge-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.closest('#open-audit-orders-btn')) {
+                        if (!this.isAdmin()) {
+                            alert('權限不足：只有管理員（admin）可以審核訂單！');
+                            return;
+                        }
+                        this.orderAuditFilter = 'preparing';
+                        document.getElementById('audit-order-search-input').value = '';
+                        this.showPage('audit-orders');
+                    }
+
+                    if (e.target.id === 'back-from-audit-orders-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.closest('#orders-audit-tabs .audit-tab')) {
+                        this.orderAuditFilter = e.target.closest('.audit-tab').dataset.orderFilter;
+                        this.renderAuditOrdersPage();
+                    }
+
+                    if (e.target.closest('.admin-upload-slot-btn')) {
+                        if (!this.isAdmin()) {
+                            alert('權限不足：只有管理員（admin）可以上傳或更換專屬收款碼圖片！');
+                            return;
+                        }
+                        const slotTier = e.target.closest('.admin-upload-slot-btn').dataset.slotTier;
+                        this.uploadingTargetTier = parseInt(slotTier);
+                        const bindInput = document.getElementById('bind-tier-qr-input');
+                        if (bindInput) bindInput.click();
+                    }
+
+                    if (e.target.closest('.approve-recharge-btn')) {
+                        const id = e.target.closest('.approve-recharge-btn').dataset.id;
+                        this.approveRechargeRecord(id);
+                    }
+                    if (e.target.closest('.reject-recharge-btn')) {
+                        const id = e.target.closest('.reject-recharge-btn').dataset.id;
+                        this.rejectRechargeRecord(id);
+                    }
+
+                    if (e.target.closest('.approve-order-audit-btn')) {
+                        const orderId = e.target.closest('.approve-order-audit-btn').dataset.orderId;
+                        this.approveOrderRecord(orderId);
+                    }
+                    if (e.target.closest('.cancel-order-audit-btn')) {
+                        const orderId = e.target.closest('.cancel-order-audit-btn').dataset.orderId;
+                        this.cancelAndRefundOrderRecord(orderId);
+                    }
+
+                    if (e.target.id === 'open-users-manage-btn') {
+                        if (!this.isAdmin()) {
+                            alert('權限不足：只有管理員（admin）可以管理用戶！');
+                            return;
+                        }
+                        document.getElementById('user-editor-card').style.display = 'none';
+                        document.getElementById('user-search-input').value = '';
+                        this.showPage('users');
+                    }
+
+                    if (e.target.id === 'back-from-users-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.id === 'toggle-add-user-form-btn') {
+                        this.openAddUserEditor();
+                    }
+
+                    if (e.target.id === 'cancel-user-editor-btn') {
+                        document.getElementById('user-editor-card').style.display = 'none';
+                    }
+
+                    if (e.target.id === 'save-user-editor-btn') {
+                        this.saveUserEditor();
+                    }
+
+                    if (e.target.closest('.edit-user-btn')) {
+                        const acc = e.target.closest('.edit-user-btn').dataset.account;
+                        this.openEditUserEditor(acc);
+                    }
+
+                    if (e.target.closest('.delete-user-btn')) {
+                        const acc = e.target.closest('.delete-user-btn').dataset.account;
+                        this.deleteUserAccount(acc);
+                    }
+
+                    if (e.target.id === 'open-my-orders-btn' || e.target.id === 'view-my-orders-after-success-btn') {
+                        document.getElementById('order-search-input').value = '';
+                        this.showPage('orders');
+                    }
+
+                    if (e.target.id === 'back-from-orders-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.closest('.category-tab')) {
+                        const tab = e.target.closest('.category-tab');
+                        this.setCategoryFilter(tab.dataset.category);
+                    }
+
+                    if (e.target.id === 'direct-menu-btn' || e.target.id === 'qr-code') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.id === 'show-qr-btn') {
+                        this.showPage('qr');
+                    }
+
+                    if (e.target.id === 'open-add-product-btn') {
+                        if (!this.isAdmin()) {
+                            alert('權限不足：只有管理員（admin）可以添加商品！');
+                            return;
+                        }
+                        this.resetAddProductForm();
+                        if (this.selectedCategory !== '全部') {
+                            document.getElementById('product-category').value = this.selectedCategory;
+                        }
+                        this.showPage('add-product');
+                    }
+
+                    if (e.target.id === 'cancel-add-product-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.id === 'save-product-btn') {
+                        this.handleSaveNewProduct();
+                    }
+
+                    if (e.target.closest('.edit-price-btn')) {
+                        const btn = e.target.closest('.edit-price-btn');
+                        const itemId = parseInt(btn.dataset.id);
+                        this.handleEditPrice(itemId);
+                    }
+
+                    if (e.target.closest('.delete-item-btn')) {
+                        const btn = e.target.closest('.delete-item-btn');
+                        const itemId = parseInt(btn.dataset.id);
+                        this.deleteCustomProduct(itemId);
+                    }
+
+                    if (e.target.closest('.menu-item-btn')) {
+                        const btn = e.target.closest('.menu-item-btn');
+                        const itemId = parseInt(btn.dataset.id);
+                        this.addToCart(itemId);
+                    }
+
+                    if (e.target.closest('.quantity-btn')) {
+                        const btn = e.target.closest('.quantity-btn');
+                        const action = btn.dataset.action;
+                        const itemId = parseInt(btn.dataset.id);
+                        if (action === 'minus') this.updateQuantity(itemId, -1);
+                        if (action === 'plus') this.updateQuantity(itemId, 1);
+                    }
+
+                    if (e.target.closest('.cart-btn')) {
+                        this.showPage('cart');
+                    }
+
+                    if (e.target.id === 'checkout-btn') {
+                        if (this.cart.length > 0) {
+                            this.showPage('checkout');
+                        } else {
+                            alert('請先選擇商品');
+                        }
+                    }
+
+                    if (e.target.id === 'continue-shopping-btn') {
+                        this.showPage('menu');
+                    }
+
+                    if (e.target.id === 'proceed-checkout-btn') {
+                        if (this.cart.length > 0) {
+                            this.showPage('checkout');
+                        } else {
+                            alert('購物車是空的');
+                        }
+                    }
+
+                    if (e.target.id === 'back-to-cart-btn') {
+                        this.showPage('cart');
+                    }
+
+                    if (e.target.id === 'confirm-order-btn') {
+                        if (!this.paymentMethod) {
+                            alert('請選擇付款方式');
+                            return;
+                        }
+                        if (this.paymentMethod === 'wallet') {
+                            const total = this.getCartTotalAmount();
+                            const bal = this.getCurrentUserBalance();
+                            if (bal < total) {
+                                alert(`儲值餘額不足！（目前餘額 ${this.formatPrice(bal)}，訂單需要 ${this.formatPrice(total)}）\n請先點擊「立即前往充值」或改用現金支付。`);
+                                return;
+                            }
+                        }
+                        this.showPage('confirmation');
+                    }
+
+                    if (e.target.id === 'back-checkout-btn') {
+                        this.showPage('checkout');
+                    }
+
+                    if (e.target.id === 'place-order-btn') {
+                        this.placeOrder();
+                    }
+
+                    if (e.target.closest('.option-card[data-type="payment"]')) {
+                        this.paymentMethod = e.target.closest('.option-card').dataset.value;
+                        this.updateOptionCards('payment', this.paymentMethod);
+                        this.refreshCheckoutBalanceState();
+                    }
+
+                    if (e.target.id === 'new-order-btn') {
+                        this.resetOrder();
+                        this.showPage('menu');
+                    }
+                });
+            },
+
+            addToCart(itemId) {
+                const item = this.menuItems.find(m => m.id === itemId);
+                if (!item) return;
+
+                const existingItem = this.cart.find(c => c.id === itemId);
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    this.cart.push({ ...item, quantity: 1, addons: [] });
+                }
+
+                this.updateCart();
+                if (this.currentPage === 'menu') {
+                    this.renderMenu();
+                }
+            },
+
+            updateQuantity(itemId, change) {
+                const item = this.cart.find(c => c.id === itemId);
+                if (item) {
+                    item.quantity += change;
+                    if (item.quantity <= 0) {
+                        this.cart = this.cart.filter(c => c.id !== itemId);
+                    }
+                }
+                this.updateCart();
+                if (this.currentPage === 'menu') {
+                    this.renderMenu();
+                }
+            },
+
+            updateCart() {
+                this.renderCart();
+                this.updateCartButton();
+                this.updateCheckoutSummary();
+            },
+
+            renderCart() {
+                const cartItemsHtml = this.cart.map(item => {
+                    const iconHtml = item.image
+                        ? `<img src="${item.image}" class="cart-item-thumb" alt="${item.name}">`
+                        : `<span>${item.emoji}</span>`;
+
+                    const itemSubtotal = (Math.round(item.price * 100) * item.quantity) / 100;
+
+                    return `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <h3>${iconHtml} ${item.name}</h3>
+                                <p class="cart-item-quantity">數量: ${item.quantity}</p>
+                                <div class="quantity-selector" style="margin-top: 0.5rem;">
+                                    <button class="quantity-btn" data-action="minus" data-id="${item.id}">−</button>
+                                    <span class="quantity-display">${item.quantity}</span>
+                                    <button class="quantity-btn" data-action="plus" data-id="${item.id}">+</button>
+                                </div>
+                            </div>
+                            <div class="cart-item-price">
+                                <div class="cart-item-total">${this.formatPrice(itemSubtotal)}</div>
+                                <div style="font-size: 0.9rem; color: var(--text-light);">單價 ${this.formatPrice(item.price)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const cartItemsContainer = document.getElementById('cart-items-container');
+                if (cartItemsContainer) {
+                    cartItemsContainer.innerHTML = cartItemsHtml || '<div class="empty-cart">購物車是空的</div>';
+                }
+            },
+
+            updateCartButton() {
+                const totalItems = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+                const totalPrice = this.getCartTotalAmount();
+
+                const cartButton = document.querySelector('.cart-btn');
+                if (cartButton) {
+                    cartButton.textContent = `🛒 查看購物車 (${totalItems})`;
+                }
+
+                const cartCount = document.getElementById('cart-count');
+                if (cartCount) {
+                    cartCount.textContent = `${totalItems} 項商品`;
+                }
+
+                const cartTotal = document.getElementById('cart-total');
+                if (cartTotal) {
+                    cartTotal.textContent = this.formatPrice(totalPrice);
+                }
+            },
+
+            updateCheckoutSummary() {
+                const total = this.getCartTotalAmount();
+                const bal = this.getCurrentUserBalance();
+
+                ['subtotal', 'total-price', 'checkout-subtotal', 'checkout-total'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = this.formatPrice(total);
+                });
+
+                const cartBalEl = document.getElementById('cart-wallet-balance');
+                if (cartBalEl) cartBalEl.textContent = this.formatPrice(bal);
+
+                const checkoutBalEl = document.getElementById('checkout-wallet-balance');
+                if (checkoutBalEl) checkoutBalEl.textContent = this.formatPrice(bal);
+
+                const cardBalEl = document.getElementById('checkout-card-balance');
+                if (cardBalEl) cardBalEl.textContent = `可用餘額：${this.formatPrice(bal)}`;
+
+                this.refreshCheckoutBalanceState();
+            },
+
+            refreshCheckoutBalanceState() {
+                const total = this.getCartTotalAmount();
+                const bal = this.getCurrentUserBalance();
+                const alertBox = document.getElementById('insufficient-balance-alert');
+                const alertMsg = document.getElementById('insufficient-balance-msg');
+                const confirmBtn = document.getElementById('confirm-order-btn');
+
+                if (!alertBox || !confirmBtn) return;
+
+                if (this.paymentMethod === 'wallet' && bal < total) {
+                    const diff = (Math.round(total * 100) - Math.round(bal * 100)) / 100;
+                    alertBox.style.display = 'block';
+                    if (alertMsg) {
+                        alertMsg.textContent = `⚠️ 您的儲值餘額（${this.formatPrice(bal)}）不足，還差 ${this.formatPrice(diff)}！請先充值後再下單。`;
+                    }
+                    confirmBtn.disabled = true;
+                } else {
+                    alertBox.style.display = 'none';
+                    confirmBtn.disabled = false;
+                }
+            },
+
+            updateOptionCards(type, value) {
+                document.querySelectorAll(`.option-card[data-type="${type}"]`).forEach(card => {
+                    if (card.dataset.value === value) {
+                        card.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                });
+            },
+
+            showPage(pageName) {
+                if (!this.currentUser && pageName !== 'login') {
+                    pageName = 'login';
+                }
+
+                const adminOnlyPages = ['add-product', 'users', 'audit-recharge', 'audit-orders'];
+                if (adminOnlyPages.includes(pageName) && !this.isAdmin()) {
+                    alert('權限不足：只有管理員（admin）可以存取此功能！');
+                    pageName = 'menu';
+                }
+
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+
+                const page = document.getElementById(`${pageName}-page`);
+                if (page) {
+                    page.classList.add('active');
+                    this.currentPage = pageName;
+
+                    const cartBar = document.querySelector('.cart-section');
+                    if (cartBar) {
+                        cartBar.style.display = (pageName === 'menu') ? 'block' : 'none';
+                    }
+
+                    if (pageName === 'menu') {
+                        this.updateUserDisplay();
+                        this.renderMenu();
+                        this.updateCartButton();
+                    }
+                    if (pageName === 'recharge') {
+                        document.getElementById('recharge-page-current-balance').textContent = this.formatPrice(this.getCurrentUserBalance());
+                        this.selectRechargeTier(this.selectedRechargeTier);
+                    }
+                    if (pageName === 'audit-recharge') {
+                        this.renderAuditRechargePage();
+                    }
+                    if (pageName === 'my-recharge-records') {
+                        this.renderMyRechargeRecordsPage();
+                    }
+                    if (pageName === 'audit-orders') {
+                        this.prepareAndRenderAuditOrdersPage();
+                    }
+                    if (pageName === 'users') {
+                        this.renderUsersPage();
+                    }
+                    if (pageName === 'orders') {
+                        this.renderMyOrdersPage();
+                    }
+                    if (pageName === 'cart') {
+                        this.renderCart();
+                        this.updateCheckoutSummary();
+                    }
+                    if (pageName === 'checkout') {
+                        if (!this.paymentMethod) this.paymentMethod = 'wallet';
+                        this.updateOptionCards('payment', this.paymentMethod);
+                        this.updateCheckoutSummary();
+                    }
+                    if (pageName === 'confirmation') {
+                        this.renderConfirmation();
+                    }
+                    window.scrollTo(0, 0);
+                }
+            },
+
+            renderMenu() {
+                const menuGrid = document.getElementById('menu-items');
+                if (!menuGrid) return;
+
+                const isAdminUser = this.isAdmin();
+
+                const filteredItems = this.selectedCategory === '全部'
+                    ? this.menuItems
+                    : this.menuItems.filter(item => item.category === this.selectedCategory);
+
+                if (filteredItems.length === 0) {
+                    let hintText = '';
+                    if (this.selectedCategory === '全部') {
+                        hintText = isAdminUser
+                            ? '目前商品列表是空的，請點擊上方「➕ 添加商品」自行新增商品！'
+                            : '目前尚無上架商品，請稍後再來選購';
+                    } else {
+                        hintText = isAdminUser
+                            ? `目前「${this.selectedCategory}」分類尚無商品，請點擊上方「➕ 添加商品」新增！`
+                            : `目前「${this.selectedCategory}」分類尚無商品`;
+                    }
+                    menuGrid.innerHTML = `<div class="empty-category-msg">${hintText}</div>`;
+                    return;
+                }
+
+                const html = filteredItems.map(item => {
+                    const quantityInfo = this.cart.find(c => c.id === item.id);
+                    const currentQty = quantityInfo ? quantityInfo.quantity : 0;
+
+                    const mediaHtml = item.image
+                        ? `<img src="${item.image}" alt="${item.name}">`
+                        : item.emoji;
+
+                    const deleteBtnHtml = isAdminUser
+                        ? `<button class="delete-item-btn" data-id="${item.id}" title="刪除此商品">🗑️ 刪除</button>`
+                        : '';
+
+                    const editPriceBtnHtml = isAdminUser
+                        ? `<button class="edit-price-btn" data-id="${item.id}" title="修改價格">✏️ 改價</button>`
+                        : '';
+
+                    return `
+                        <div class="menu-item">
+                            ${deleteBtnHtml}
+                            <div>
+                                <div class="menu-item-image">${mediaHtml}</div>
+                                <h3>${item.name}</h3>
+                                <div class="menu-item-category">${item.category}</div>
+                                <div class="menu-item-description">${item.description}</div>
+                            </div>
+                            <div class="menu-item-footer">
+                                <div class="price-box">
+                                    <span class="price">${this.formatPrice(item.price)}</span>
+                                    ${editPriceBtnHtml}
+                                </div>
+                                ${currentQty > 0 ?
+                                    `<div class="quantity-selector">
+                                        <button class="quantity-btn" data-action="minus" data-id="${item.id}">−</button>
+                                        <span class="quantity-display">${currentQty}</span>
+                                        <button class="quantity-btn" data-action="plus" data-id="${item.id}">+</button>
+                                    </div>`
+                                    :
+                                    `<button class="btn btn-primary btn-small menu-item-btn" data-id="${item.id}">加入購物車</button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                menuGrid.innerHTML = html;
+            },
+
+            renderConfirmation() {
+                const total = this.getCartTotalAmount();
+                const bal = this.getCurrentUserBalance();
+                const remainingAfterPay = (Math.round(bal * 100) - Math.round(total * 100)) / 100;
+
+                const userInfoText = this.currentUser
+                    ? `${this.currentUser.name}（${this.currentUser.account}）`
+                    : '訪客';
+
+                const items = this.cart.map(item => {
+                    const itemSubtotal = (Math.round(item.price * 100) * item.quantity) / 100;
+                    return `
+                        <div class="confirmation-detail">
+                            <span class="confirmation-detail-label">${item.name} × ${item.quantity}</span>
+                            <span>${this.formatPrice(itemSubtotal)}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                const walletDetailHtml = (this.paymentMethod === 'wallet')
+                    ? `<div class="confirmation-detail">
+                           <span class="confirmation-detail-label">扣款前儲值餘額</span>
+                           <span>${this.formatPrice(bal)}</span>
+                       </div>
+                       <div class="confirmation-detail">
+                           <span class="confirmation-detail-label">扣款後剩餘餘額</span>
+                           <span style="color: #2e7d32; font-weight: bold;">${this.formatPrice(remainingAfterPay)}</span>
+                       </div>`
+                    : '';
+
+                const confirmationContent = document.getElementById('confirmation-content');
+                if (confirmationContent) {
+                    confirmationContent.innerHTML = `
+                        <div class="confirmation-section">
+                            <h3>👤 訂購會員</h3>
+                            <div class="confirmation-detail">
+                                <span class="confirmation-detail-label">會員賬號</span>
+                                <span>${userInfoText}</span>
+                            </div>
+                        </div>
+
+                        <div class="confirmation-section">
+                            <h3>📋 訂購商品</h3>
+                            ${items}
+                        </div>
+                        
+                        <div class="confirmation-section">
+                            <h3>💳 支付方式</h3>
+                            <div class="confirmation-detail">
+                                <span class="confirmation-detail-label">選擇方式</span>
+                                <span>${this.getPaymentMethodName(this.paymentMethod)}</span>
+                            </div>
+                            ${walletDetailHtml}
+                        </div>
+                        
+                        <div class="confirmation-section">
+                            <h3>📊 訂單金額</h3>
+                            <div class="confirmation-detail" style="border: none; font-size: 1.45rem; font-weight: bold; color: var(--accent-color);">
+                                <span>本次實付合計</span>
+                                <span>${this.formatPrice(total)}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+
+            getPaymentMethodName(method) {
+                const methods = {
+                    'wallet': '💰 儲值餘額扣款',
+                    'cash': '💵 到店現金支付'
+                };
+                return methods[method] || '未選擇';
+            },
+
+            placeOrder() {
+                if (this.cart.length === 0) return;
+
+                const totalAmount = this.getCartTotalAmount();
+
+                if (this.paymentMethod === 'wallet') {
+                    const currentBal = this.getCurrentUserBalance();
+                    if (currentBal < totalAmount) {
+                        alert(`儲值餘額不足（目前餘額 ${this.formatPrice(currentBal)}），無法完成下單！`);
+                        this.showPage('checkout');
+                        return;
+                    }
+                    this.adjustUserBalance(this.currentUser.account, -totalAmount);
+                }
+
+                this.orderNumber = this.generateOrderNumber();
+
+                const newOrderRecord = {
+                    orderNumber: this.orderNumber,
+                    userAccount: this.currentUser ? this.currentUser.account : 'guest',
+                    userName: this.currentUser ? this.currentUser.name : '訪客',
+                    items: this.cart.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity
+                    })),
+                    paymentMethod: this.paymentMethod,
+                    totalAmount: totalAmount,
+                    status: 'preparing',
+                    createdAt: this.formatDateTime(Date.now())
+                };
+
+                this.orders.unshift(newOrderRecord);
+                this.saveOrdersData();
+
+                this.cart = [];
+                this.updateCart();
+
+                const subtitleEl = document.getElementById('success-subtitle');
+                const remainEl = document.getElementById('success-remaining-balance');
+                const viewBtn = document.getElementById('view-my-orders-after-success-btn');
+
+                if (this.paymentMethod === 'wallet') {
+                    if (subtitleEl) subtitleEl.textContent = `已從儲值餘額成功扣除 ${this.formatPrice(totalAmount)}，等待管理員審核配貨`;
+                    if (remainEl) remainEl.textContent = `💰 目前剩餘儲值餘額：${this.formatPrice(this.getCurrentUserBalance())}`;
+                } else {
+                    if (subtitleEl) subtitleEl.textContent = '訂單已提交，等待管理員審核配貨（取貨時現金付款）';
+                    if (remainEl) remainEl.textContent = '';
+                }
+
+                if (viewBtn) {
+                    viewBtn.style.display = this.isAdmin() ? 'none' : 'inline-flex';
+                }
+
+                document.getElementById('order-num').textContent = this.orderNumber;
+                this.showPage('success');
+            },
+
+            generateOrderNumber() {
+                const timestamp = Date.now().toString().slice(-8);
+                const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                return `ORD${timestamp}${random}`;
+            },
+
+            resetOrder() {
+                this.cart = [];
+                this.paymentMethod = 'wallet';
+                this.orderNumber = null;
+                this.updateCart();
+                this.updateOptionCards('payment', 'wallet');
+            }
+        };
+
+        // ===== 初始化應用 =====
+        document.addEventListener('DOMContentLoaded', () => {
+            APP.init();
+        });
+    </script>
+</body>
+</html>
